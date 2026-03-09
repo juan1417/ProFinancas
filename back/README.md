@@ -1,0 +1,3 @@
+## estructura de trabajo
+
+Se utuliza uv para gestionar el uso de dependencias y la ejecución de tareas. Para instalar uv, puedes seguir las instrucciones. Primero se utulizara o se creara los tests para despues crear el codigo necesario para que los tests pasen. pienso utilizar pytest para la creacion de los tests y django para el desarrollo de la aplicacion basando en la arquitectura hexagonal este se adaptara a la arquitectura de django para que se pueda integrar de manera sencilla con el framework.
