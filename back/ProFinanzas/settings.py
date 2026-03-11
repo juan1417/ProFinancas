@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'auth',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
@@ -77,20 +77,30 @@ WSGI_APPLICATION = 'ProFinanzas.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.rurwaguzyposflomsaax',
-        'PASSWORD': os.getenv('PASSWORD'),
-        'HOST': 'https://rurwaguzyposflomsaax.supabase.co',
-        'PORT': '6543',
-        'DBNAME': 'profinanzas',
-        'OPTIONS': {
-            'sslmode': 'require',
+# Use SQLite for development and testing
+# For production, use environment variables to configure PostgreSQL/Supabase
+if os.getenv('USE_POSTGRESQL', 'false').lower() == 'true':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'postgres'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '6543'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            }
         }
     }
-}
+else:
+    # SQLite for development and testing
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -138,3 +148,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
