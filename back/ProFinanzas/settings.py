@@ -25,12 +25,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'django_filters',
     'django_filters',
     'usuarios',
     'transactions',
@@ -94,14 +91,7 @@ else:
             }
         }
     }
-else:
-    # SQLite for development and testing
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+
 
 
 # ─── Autenticación ────────────────────────────────────────────────────────────
