@@ -92,7 +92,13 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     def validate_transaction_date(self, value):
         """Validación de la fecha de transacción"""
-        if value > timezone.now():
+        # Asegurar que ambos valores sean timezone-aware para comparación
+        now = timezone.now()
+        # Si value es naive, hacerlo aware
+        if timezone.is_naive(value):
+            value = timezone.make_aware(value)
+        
+        if value > now:
             raise serializers.ValidationError(
                 "La fecha de la transacción no puede ser futura"
             )

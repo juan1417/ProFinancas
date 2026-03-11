@@ -5,11 +5,11 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    """Modelo de usuário personalizado que estende o AbstractUser do Django.
-    con los siguientes campos: id, username, email, first_name, last_name, created_at, updated_at.
+    """Modelo de usuario personalizado que extiende el AbstractUser de Django.
+    Con los siguientes campos: id, username, email, first_name, last_name, created_at, updated_at.
 
     Args:
-        AbstractUser (_type_): __
+        AbstractUser (_type_): Clase base de Django para usuarios
     """
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
