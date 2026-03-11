@@ -25,13 +25,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
-    # Local apps
+    'django_filters',
     'usuarios',
+    'transactions',
+
 ]
 
 MIDDLEWARE = [
@@ -68,6 +71,7 @@ WSGI_APPLICATION = 'ProFinanzas.wsgi.application'
 # En entorno de tests se usa SQLite en memoria para velocidad (TDD)
 TESTING = os.getenv('DJANGO_TESTING', 'False') == 'True'
 
+
 if TESTING:
     DATABASES = {
         'default': {
@@ -76,19 +80,29 @@ if TESTING:
         }
     }
 else:
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('DB_NAME', 'postgres'),
-            'USER': os.getenv('DB_USER', 'postgres.rurwaguzyposflomsaax'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'aws-0-us-east-1.pooler.supabase.com'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '6543'),
             'OPTIONS': {
                 'sslmode': 'require',
-            },
+            }
         }
     }
+else:
+    # SQLite for development and testing
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # ─── Autenticación ────────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'usuarios.User'
