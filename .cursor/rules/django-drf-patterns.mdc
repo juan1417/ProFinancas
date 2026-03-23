@@ -1,0 +1,78 @@
+---
+description: Django + DRF conventions for the ProFinancas backend
+globs: back/**/*.py
+alwaysApply: false
+---
+
+# Django / DRF Patterns — ProFinancas Backend
+
+## Project Structure
+
+Each Django app must follow this layout:
+```
+app/
+  models.py       # Data models
+  serializers.py  # DRF serializers
+  views.py        # ViewSets
+  urls.py         # Router registration
+  admin.py        # Admin config
+  tests.py / test_api.py
+```
+
+## Models
+
+- Always include `created_at` / `updated_at` with `auto_now_add` / `auto_now`
+- Always add `verbose_name` and `help_text` to every field
+- Always define `class Meta` with `ordering`, `indexes`, and `verbose_name`
+- Always implement `__str__`
+- Use `models.PROTECT` for FK to prevent accidental cascade deletes on critical relations
+
+```python
+# ✅ GOOD
+class Meta:
+    verbose_name = 'Transacción'
+    ordering = ['-created_at']
+    indexes = [models.Index(fields=['user', '-created_at'])]
+
+# ❌ BAD — missing Meta, verbose_name, indexes
+```
+
+## Serializers
+
+- Always use `read_only_fields` for `created_at`, `updated_at`, and computed fields
+- Field-level validation → `validate_<field>(self, value)`
+- Object-level validation (cross-field) → `validate(self, data)`
+- In `validate`, always handle the partial update case: `data.get('x') or (self.instance.x if self.instance else None)`
+
+```python
+# ✅ GOOD
+def validate(self, data):
+    user = data.get('user') or (self.instance.user if self.instance else None)
+    ...
+```
+
+## ViewSets
+
+- Always filter `get_queryset()` by `self.request.user` — never return all objects
+- Always use `perform_create` to assign `user=self.request.user`
+- Use `select_related` / `prefetch_related` in `get_queryset` to avoid N+1 queries
+- Custom actions use `@action(detail=False, methods=['get'])`
+
+```python
+# ✅ GOOD
+def get_queryset(self):
+    return Transaction.objects.filter(user=self.request.user).select_related('category')
+
+def perform_create(self, serializer):
+    serializer.save(user=self.request.user)
+
+# ❌ BAD — exposes all users' data
+def get_queryset(self):
+    return Transaction.objects.all()
+```
+
+## Authentication
+
+- All endpoints require JWT authentication via `rest_framework_simplejwt`
+- Never skip `request.user` filtering; remove `# TODO` stubs before deploying
+- `User` model uses UUID primary key and `email` as `USERNAME_FIELD`

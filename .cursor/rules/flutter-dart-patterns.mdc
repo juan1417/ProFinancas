@@ -1,0 +1,87 @@
+---
+description: Flutter/Dart conventions for the ProFinancas mobile frontend
+globs: pro_finanzas/**/*.dart
+alwaysApply: false
+---
+
+# Flutter / Dart Patterns — ProFinancas Frontend
+
+## Folder Structure
+
+```
+lib/
+  main.dart
+  models/        # Data classes matching DRF serializers
+  services/      # API calls (HTTP layer)
+  screens/       # Full-page widgets (one file per screen)
+  widgets/       # Reusable UI components
+  providers/     # State management
+```
+
+## Models
+
+- Mirror the DRF serializer fields exactly (names, types)
+- Always implement `fromJson` / `toJson`
+- Use `const` constructors where all fields are final
+
+```dart
+// ✅ GOOD
+class Transaction {
+  final String id;
+  final String type; // 'INCOME' | 'EXPENSE'
+  final double amount;
+  final String description;
+  final DateTime transactionDate;
+
+  const Transaction({required this.id, required this.type, required this.amount, ...});
+
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+    id: json['id'],
+    type: json['type'],
+    amount: (json['amount'] as num).toDouble(),
+    transactionDate: DateTime.parse(json['transaction_date']),
+  );
+}
+```
+
+## Widgets
+
+- Prefer `const` constructors for stateless widgets
+- Extract reusable pieces into `widgets/` — do not repeat UI logic in screens
+- Name screens with `Screen` suffix, reusable widgets without it
+
+```dart
+// ✅ GOOD
+class TransactionCard extends StatelessWidget {
+  const TransactionCard({super.key, required this.transaction});
+  ...
+}
+```
+
+## API Service Layer
+
+- All HTTP calls live in `services/` — never call `http` or `dio` directly from screens
+- Base URL should reference the Django backend (`http://10.0.2.2:8000/api/` for Android emulator)
+- Always handle errors and return typed results
+
+```dart
+// ✅ GOOD
+class TransactionService {
+  Future<List<Transaction>> getTransactions() async {
+    final response = await _dio.get('/transactions/');
+    return (response.data as List).map((e) => Transaction.fromJson(e)).toList();
+  }
+}
+
+// ❌ BAD — HTTP call inside a widget
+onPressed: () async {
+  final res = await http.get(Uri.parse('http://...'));
+}
+```
+
+## Conventions
+
+- Use `snake_case` for files and directories, `PascalCase` for class names
+- Always pass `super.key` in widget constructors
+- Financial amounts are `double`; display using `NumberFormat.currency` from `intl`
+- Transaction type constants: `'INCOME'` and `'EXPENSE'` (uppercase strings, matching backend)
