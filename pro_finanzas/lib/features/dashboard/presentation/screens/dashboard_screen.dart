@@ -404,7 +404,7 @@ class _RecentTransactionsCard extends StatelessWidget {
             )
           else
             ...transactions.map((tx) {
-              final isExpense = tx.type == 'expense';
+              final isExpense = tx.isExpense;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
@@ -437,7 +437,7 @@ class _RecentTransactionsCard extends StatelessWidget {
                               style: AppTextStyles.body,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis),
-                          Text(tx.category.name,
+                          Text(tx.categoryName,
                               style: AppTextStyles.bodySecondary),
                         ],
                       ),

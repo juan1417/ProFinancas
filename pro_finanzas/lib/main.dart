@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api/api_client.dart';
+import 'core/theme/app_theme.dart';
+import 'core/shell/main_shell.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
@@ -27,8 +29,10 @@ class ProFinancasApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final apiClient = ApiClient.instance;
 
-    final authRepo = AuthRepositoryImpl(AuthRemoteDatasource(apiClient));
-    final txRepo = TransactionRepositoryImpl(TransactionRemoteDatasource(apiClient));
+    final authRepo =
+        AuthRepositoryImpl(AuthRemoteDatasource(apiClient));
+    final txRepo =
+        TransactionRepositoryImpl(TransactionRemoteDatasource(apiClient));
 
     return MultiProvider(
       providers: [
@@ -44,18 +48,26 @@ class ProFinancasApp extends StatelessWidget {
             getTransactions: GetTransactionsUseCase(txRepo),
             createTransaction: CreateTransactionUseCase(txRepo),
             getSummary: GetSummaryUseCase(txRepo),
+            repository: txRepo,
           ),
         ),
       ],
       child: MaterialApp(
         title: 'ProFinancas',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A73E8)),
-          useMaterial3: true,
-        ),
-        home: const LoginScreen(),
+        theme: AppTheme.light,
+        home: const _AuthGate(),
       ),
     );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    final isAuthenticated = context.watch<AuthProvider>().isAuthenticated;
+    return isAuthenticated ? const MainShell() : const LoginScreen();
   }
 }

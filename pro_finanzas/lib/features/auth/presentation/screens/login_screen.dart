@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               const SizedBox(height: 32),
               // Logo + Title
-              Text('Profiancas',
+              Text('Profinancas',
                   style: AppTextStyles.headlineLarge
                       .copyWith(color: AppColors.primary)),
               Container(

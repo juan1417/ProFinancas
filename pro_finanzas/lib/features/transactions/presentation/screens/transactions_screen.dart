@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
+import '../../domain/entities/transaction.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -43,10 +44,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final filtered = provider.transactions.where((tx) {
       final matchesQuery = query.isEmpty ||
           tx.description.toLowerCase().contains(query) ||
-          tx.category.name.toLowerCase().contains(query);
+          tx.categoryName.toLowerCase().contains(query);
       final matchesFilter = _selectedFilter == 'All' ||
-          (_selectedFilter == 'Income' && tx.type == 'income') ||
-          (_selectedFilter == 'Expenses' && tx.type == 'expense');
+          (_selectedFilter == 'Income' && tx.isIncome) ||
+          (_selectedFilter == 'Expenses' && tx.isExpense);
       return matchesQuery && matchesFilter;
     }).toList();
 
@@ -216,11 +217,11 @@ class _StripStat extends StatelessWidget {
 // ── Transaction tile ──────────────────────────────────────────────────────────
 class _TransactionTile extends StatelessWidget {
   const _TransactionTile({required this.transaction});
-  final dynamic transaction;
+  final Transaction transaction;
 
   @override
   Widget build(BuildContext context) {
-    final isExpense = transaction.type == 'expense';
+    final isExpense = transaction.isExpense;
     final categoryColor = isExpense ? AppColors.tertiary : AppColors.secondary;
 
     return AppCard(
@@ -253,7 +254,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${transaction.category.name} · ${DateFormatter.short(transaction.date)}',
+                  '${transaction.categoryName} · ${DateFormatter.short(transaction.transactionDate)}',
                   style: AppTextStyles.bodySecondary,
                 ),
               ],
@@ -417,7 +418,7 @@ class _AddTransactionSheetState extends State<_AddTransactionSheet> {
                   const InputDecoration(labelText: 'Category'),
               value: _categoryId,
               items: provider.categories
-                  .map((c) => DropdownMenuItem(
+                  .map((c) => DropdownMenuItem<int>(
                       value: c.id, child: Text(c.name)))
                   .toList(),
               onChanged: (v) => setState(() => _categoryId = v),
