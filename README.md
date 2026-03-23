@@ -1,6 +1,37 @@
 # ProFinancas
 
-Plataforma de gestión financiera personal de alto nivel. Diseñada para registrar transacciones, analizar gastos, escanear facturas y administrar billeteras desde una sola app.
+> Plataforma de gestión financiera personal de alto nivel.
+
+---
+
+## Descripción
+
+ProFinancas es una aplicación fullstack para el control y análisis de finanzas personales. Permite registrar ingresos y gastos, visualizar el estado financiero en tiempo real, escanear facturas automáticamente y administrar múltiples billeteras desde una interfaz moderna y elegante.
+
+---
+
+## Características
+
+- **Registro de transacciones** — Crea ingresos y gastos con categoría, descripción y fecha
+- **Dashboard financiero** — Tarjeta de portafolio con balance, presupuesto mensual y gráfica de distribución de gastos
+- **Escáner de facturas** — Captura y extrae datos de facturas automáticamente para registrarlas sin escribir nada
+- **Analíticas avanzadas** — Gráfica comparativa de ingresos vs gastos, KPIs por período y desglose por categoría
+- **Gestión de billeteras** — Vista de tarjetas bancarias, tasa de ahorro y acciones rápidas (transferir, agregar fondos)
+- **Autenticación segura** — Login y registro con tokens JWT; soporte para Touch ID y Face ID (placeholder)
+- **Modo offline-ready** — Arquitectura preparada para caché local
+
+---
+
+## Pantallas
+
+| Pantalla | Descripción |
+|---|---|
+| Login / Registro | Autenticación con JWT |
+| Dashboard | Portafolio, presupuesto y gráfica de donut por categoría |
+| Expense Manager | Lista de transacciones con búsqueda y filtros |
+| Invoice Scanner | Visor de cámara y revisión de datos extraídos |
+| Analytics | KPIs, gráfica de barras y breakdown por categoría |
+| Wallets | Tarjeta bancaria, estadísticas y acciones rápidas |
 
 ---
 
@@ -21,17 +52,17 @@ Plataforma de gestión financiera personal de alto nivel. Diseñada para registr
 
 ## Arquitectura
 
-### Backend — Django REST Framework
+### Backend — Service Layer + Thin Views
 
-El backend sigue el patrón **Service Layer + Thin Views**:
+La lógica de negocio vive en `services.py`. Los `views.py` solo reciben la petición y delegan.
 
 ```
 back/
   usuarios/
-    models.py        # Modelo de usuario personalizado
+    models.py        # Usuario personalizado
     serializers.py   # Validación de entrada/salida
-    services.py      # Lógica de negocio (registro, logout)
-    views.py         # Solo delega a services.py
+    services.py      # Lógica: registro, logout
+    views.py         # Delega a services.py
   transactions/
     models.py        # Category, Transaction
     serializers.py
@@ -39,75 +70,57 @@ back/
     views.py         # ViewSets delgados
 ```
 
-Endpoints principales:
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| POST | `/api/auth/register/` | Registro de usuario |
-| POST | `/api/auth/login/` | Login → devuelve tokens JWT |
-| POST | `/api/auth/logout/` | Blacklist del refresh token |
-| GET/POST | `/api/transactions/` | Listar / crear transacciones |
-| GET | `/api/transactions/summary/` | Resumen financiero del período |
-| GET/POST | `/api/categories/` | Listar / crear categorías |
-
-### Frontend — Flutter (Clean Architecture)
-
-El frontend usa **Clean Architecture con estructura feature-first**:
+### Frontend — Clean Architecture (feature-first)
 
 ```
 pro_finanzas/lib/
   core/
     api/             # ApiClient (Dio), ApiConstants
     errors/          # Jerarquía de excepciones
-    shell/           # MainShell (5 tabs + bottom nav)
+    shell/           # MainShell (navegación 5 tabs)
     theme/           # AppColors, AppTextStyles, AppTheme
     utils/           # CurrencyFormatter, DateFormatter
-    widgets/         # AppCard, ProAppBar, ProBottomNav,
-                     # SegmentedTabs, PercentageBadge
+    widgets/         # Componentes reutilizables
   features/
-    auth/
-      data/          # AuthRemoteDatasource, UserModel, AuthRepositoryImpl
-      domain/        # User entity, AuthRepository (abstract), UseCases
-      presentation/  # AuthProvider, LoginScreen, RegisterScreen
-    transactions/
-      data/          # TransactionRemoteDatasource, Models, RepositoryImpl
-      domain/        # Category/Transaction entities, Repository, UseCases
-      presentation/  # TransactionProvider, TransactionsScreen, widgets
-    dashboard/       # DashboardScreen
-    scanner/         # ScannerScreen
-    analytics/       # AnalyticsScreen
-    wallet/          # WalletScreen
+    auth/            # Login, registro, JWT
+    transactions/    # CRUD de transacciones y categorías
+    dashboard/       # Pantalla principal
+    scanner/         # Escáner de facturas
+    analytics/       # Estadísticas y gráficas
+    wallet/          # Billeteras y tarjetas
 ```
 
-Cada feature sigue las capas:
+Cada feature sigue tres capas:
 
 ```
-Domain  →  abstracciones puras (entidades, repositorios, use cases)
-Data    →  implementación HTTP (datasources, modelos, repositorio)
-Presentation → UI + Provider (estado)
+Domain       →  entidades, repositorios abstractos, use cases
+Data         →  datasources HTTP, modelos JSON, implementación
+Presentation →  Provider (estado) + Screens + Widgets
 ```
-
----
-
-## Pantallas
-
-| Pantalla | Descripción |
-|---|---|
-| Login / Register | Autenticación con JWT, biométrico placeholder |
-| Dashboard | Tarjeta de portafolio, presupuesto mensual, gráfica de donut por categoría |
-| Expense Manager | Lista de transacciones con búsqueda, filtros y formulario de alta |
-| Invoice Scanner | Visor de cámara, extracción de datos de facturas, historial de escaneos |
-| Analytics | KPIs de ingreso/gasto, gráfica de barras comparativa, breakdown por categoría |
-| Wallets | Tarjeta bancaria premium, acciones rápidas, estadísticas de uso de tarjeta |
 
 ---
 
 ## Sistema de diseño
 
 - **Color primario:** Navy blue `#1A237E`
-- **Ingreso:** Verde `#2E7D32` · **Gasto:** Rojo `#C62828`
-- **Tipografía:** Inter (Google Fonts), 3 escalas: Headline / Body / Label
-- **Componentes:** Cards con border-radius 16, Bottom nav con FAB central, chips de filtro animados
+- **Ingresos:** Verde `#2E7D32` · **Gastos:** Rojo `#C62828`
+- **Tipografía:** Inter — 3 escalas: Headline / Body / Label
+- **Cards:** Border-radius 16, fondo blanco, borde sutil
+- **Navegación:** Bottom nav con FAB central (escáner)
+- **Botones:** 4 variantes — Primary, Secondary, Inverted, Outlined
+
+---
+
+## API — Endpoints principales
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/auth/register/` | Registro de usuario |
+| POST | `/api/auth/login/` | Login → tokens JWT |
+| POST | `/api/auth/logout/` | Invalidar refresh token |
+| GET/POST | `/api/transactions/` | Listar / crear transacciones |
+| GET | `/api/transactions/summary/` | Resumen financiero del período |
+| GET/POST | `/api/categories/` | Listar / crear categorías |
 
 ---
 
@@ -117,7 +130,7 @@ Presentation → UI + Provider (estado)
 
 ```bash
 cd back
-pip install -r requirements.txt   # o: uv sync
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
@@ -127,20 +140,19 @@ python manage.py runserver
 ```bash
 cd pro_finanzas
 flutter pub get
-flutter run -d edge        # web
-flutter run -d windows     # escritorio
-flutter run                # dispositivo conectado
+flutter run -d edge        # Navegador web
+flutter run -d windows     # Escritorio Windows
+flutter run                # Dispositivo/emulador conectado
 ```
 
-> El frontend apunta a `http://10.0.2.2:8000/api/` por defecto (emulador Android).
-> Para web/desktop, cambia `baseUrl` en `lib/core/api/api_constants.dart`.
+> Para web y desktop, actualiza `baseUrl` en `lib/core/api/api_constants.dart` apuntando a `http://localhost:8000/api/`.
 
 ---
 
-## Convenciones
+## Convenciones de código
 
-- Archivos y directorios: `snake_case`
-- Clases: `PascalCase`
+- Archivos y directorios: `snake_case` · Clases: `PascalCase`
 - Montos financieros: siempre `double`, mostrar con `CurrencyFormatter.format()`
 - Tipos de transacción: `'INCOME'` / `'EXPENSE'` (mayúsculas, igual que el backend)
-- Lógica de negocio en Django: siempre en `services.py`, nunca en `views.py`
+- Lógica de negocio en Django: siempre en `services.py`, nunca directamente en `views.py`
+- Llamadas HTTP en Flutter: solo desde la capa `data/datasources/`, nunca desde Screens
