@@ -11,6 +11,13 @@ import 'features/auth/domain/usecases/register_usecase.dart';
 import 'features/auth/domain/usecases/logout_usecase.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/categories/data/datasources/category_remote_datasource.dart';
+import 'features/categories/data/repositories/category_repository_impl.dart';
+import 'features/categories/domain/usecases/create_category_usecase.dart';
+import 'features/categories/domain/usecases/delete_category_usecase.dart';
+import 'features/categories/domain/usecases/list_categories_usecase.dart';
+import 'features/categories/domain/usecases/update_category_usecase.dart';
+import 'features/categories/presentation/providers/category_provider.dart';
 import 'features/transactions/data/datasources/transaction_remote_datasource.dart';
 import 'features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'features/transactions/domain/usecases/get_transactions_usecase.dart';
@@ -33,6 +40,8 @@ class ProFinancasApp extends StatelessWidget {
         AuthRepositoryImpl(AuthRemoteDatasource(apiClient));
     final txRepo =
         TransactionRepositoryImpl(TransactionRemoteDatasource(apiClient));
+    final categoryRepo =
+        CategoryRepositoryImpl(CategoryRemoteDatasource(apiClient));
 
     return MultiProvider(
       providers: [
@@ -41,6 +50,7 @@ class ProFinancasApp extends StatelessWidget {
             loginUseCase: LoginUseCase(authRepo),
             registerUseCase: RegisterUseCase(authRepo),
             logoutUseCase: LogoutUseCase(authRepo),
+            repository: authRepo,
           ),
         ),
         ChangeNotifierProvider(
@@ -48,7 +58,14 @@ class ProFinancasApp extends StatelessWidget {
             getTransactions: GetTransactionsUseCase(txRepo),
             createTransaction: CreateTransactionUseCase(txRepo),
             getSummary: GetSummaryUseCase(txRepo),
-            repository: txRepo,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CategoryProvider(
+            listCategories: ListCategoriesUseCase(categoryRepo),
+            createCategory: CreateCategoryUseCase(categoryRepo),
+            updateCategory: UpdateCategoryUseCase(categoryRepo),
+            deleteCategory: DeleteCategoryUseCase(categoryRepo),
           ),
         ),
       ],
