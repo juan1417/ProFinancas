@@ -109,6 +109,26 @@ class TransactionProvider extends ChangeNotifier {
     }
   }
 
+  /// Normalized "spend by category" breakdown.
+  ///
+  /// The backend (`/transactions/by_category/`) returns rows shaped as
+  ///   `{ category__id, category__name, category__type, total_amount, transaction_count }`
+  /// but the UI wants `{ name, total, type }` for donut/bar charts. This getter
+  /// accepts either shape and returns a stable list the screens can render
+  /// without knowing where the data came from.
+  List<Map<String, dynamic>> get byCategoryBreakdown {
+    final raw = summary?['by_category'] as List<dynamic>?;
+    if (raw == null) return const [];
+    return raw.map((row) {
+      final map = row as Map<String, dynamic>;
+      // Backend shape (snake_case nested keys).
+      final name = map['category__name'] as String? ?? map['name'] as String? ?? '';
+      final total = (map['total_amount'] as num?) ?? (map['total'] as num?) ?? 0;
+      final type = map['category__type'] as String? ?? map['type'] as String? ?? 'EXPENSE';
+      return <String, dynamic>{'name': name, 'total': total, 'type': type};
+    }).toList();
+  }
+
   void _setLoading(bool value) {
     isLoading = value;
     notifyListeners();

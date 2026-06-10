@@ -1,3 +1,4 @@
+# ─── Python / Django ───────────────────────────────────────────────────────────
 .env
 .venv
 __pycache__/
@@ -8,3 +9,37 @@ __pycache__/
 *.db
 db.sqlite3
 migrations/
+
+# ─── Flutter / Dart ────────────────────────────────────────────────────────────
+pro_finanzas/.dart_tool/
+pro_finanzas/.flutter-plugins
+pro_finanzas/.flutter-plugins-dependencies
+pro_finanzas/.packages
+pro_finanzas/build/
+pro_finanzas/.idea/
+pro_finanzas/.vscode/
+pro_finanzas/android/.gradle/
+pro_financas/android/app/build/
+pro_finanzas/android/build/
+pro_finanzas/ios/Pods/
+pro_finanzas/ios/.symlinks/
+pro_finanzas/ios/Flutter/Flutter.framework
+pro_finanzas/ios/Flutter/Flutter.podspec
+pro_finanzas/macos/Pods/
+pro_finanzas/macos/Flutter/ephemeral/
+pro_finanzas/linux/flutter/ephemeral/
+pro_finanzas/windows/flutter/ephemeral/
+pro_finanzas/.flutter-plugins
+pro_finanzas/.flutter-plugins-dependencies
+*.iml
+
+# ─── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
