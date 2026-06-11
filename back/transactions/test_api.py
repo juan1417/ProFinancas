@@ -11,7 +11,7 @@ from transactions.models import Category, Transaction
 @pytest.mark.django_db
 class TestCategoryAPI(APITestCase):
     """Tests para la API de categorías"""
-    
+
     def setUp(self):
         """Configuración inicial para cada test"""
         self.client = APIClient()
@@ -20,6 +20,13 @@ class TestCategoryAPI(APITestCase):
             email='test@example.com',
             password='testpass123'
         )
+        # El backend exige autenticacion en todos los endpoints
+        # (DEFAULT_PERMISSION_CLASSES = IsAuthenticated), por lo que
+        # sin esto todos los requests rebotaban con 401. Ver
+        # transactions/views.py:35 y 77 — get_queryset() filtra por
+        # request.user, asi que cualquier test de la API sin auth
+        # no estaba probando nada real.
+        self.client.force_authenticate(user=self.user)
     
     def test_create_category(self):
         """Test: Crear una categoría a través de la API"""
@@ -174,6 +181,9 @@ class TestTransactionAPI(APITestCase):
             type='EXPENSE',
             user=self.user
         )
+        # Ver nota en TestCategoryAPI.setUp sobre por que esto
+        # es necesario.
+        self.client.force_authenticate(user=self.user)
     
     def test_create_transaction(self):
         """Test: Crear una transacción a través de la API"""
