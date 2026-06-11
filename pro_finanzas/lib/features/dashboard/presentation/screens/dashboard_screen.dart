@@ -93,12 +93,12 @@ class _PortfolioCard extends StatelessWidget {
             children: [
               Text('TOTAL PORTFOLIO',
                   style: AppTextStyles.label
-                      .copyWith(color: AppColors.white.withOpacity(0.7))),
+                      .copyWith(color: AppColors.white.withValues(alpha: 0.7))),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.15),
+                  color: AppColors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text('2026 Q1',
@@ -166,7 +166,7 @@ class _MiniStat extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.25),
+              color: color.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 14),
@@ -177,7 +177,7 @@ class _MiniStat extends StatelessWidget {
             children: [
               Text(label,
                   style: AppTextStyles.label
-                      .copyWith(color: AppColors.white.withOpacity(0.7))),
+                      .copyWith(color: AppColors.white.withValues(alpha: 0.7))),
               Text(value,
                   style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.white, fontSize: 13)),
@@ -200,6 +200,11 @@ class _BudgetCard extends StatelessWidget {
                 ?? provider.summary?['total_expense']) as num?)
             ?.toDouble() ??
         0.0;
+    // TODO(audit): hardcoded budget until a Budget model lands in the
+    // backend. When it does, expose it as a `BudgetProvider` (or
+    // extend TransactionProvider) and read from there. For now this
+    // is a placeholder so the "MONTHLY BUDGET" card has something
+    // to show.
     const budget = 5000.0;
     final progress = (expenses / budget).clamp(0.0, 1.0);
     final remaining = budget - expenses;

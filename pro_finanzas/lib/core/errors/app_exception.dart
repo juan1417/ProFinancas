@@ -7,13 +7,11 @@ class AppException implements Exception {
 }
 
 class NetworkException extends AppException {
-  const NetworkException([String message = 'Error de conexión. Verifica tu red.'])
-      : super(message);
+  const NetworkException([super.message = 'Error de conexión. Verifica tu red.']);
 }
 
 class AuthException extends AppException {
-  const AuthException([String message = 'No autorizado. Por favor inicia sesión.'])
-      : super(message);
+  const AuthException([super.message = 'No autorizado. Por favor inicia sesión.']);
 }
 
 class ValidationException extends AppException {
@@ -22,11 +20,9 @@ class ValidationException extends AppException {
 }
 
 class NotFoundException extends AppException {
-  const NotFoundException([String message = 'Recurso no encontrado.'])
-      : super(message);
+  const NotFoundException([super.message = 'Recurso no encontrado.']);
 }
 
 class ServerException extends AppException {
-  const ServerException([String message = 'Error interno del servidor.'])
-      : super(message);
+  const ServerException([super.message = 'Error interno del servidor.']);
 }
