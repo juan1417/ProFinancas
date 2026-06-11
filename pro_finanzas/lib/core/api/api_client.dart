@@ -12,15 +12,19 @@ class ApiClient {
   static Dio _buildDio() {
     return Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
       headers: {'Content-Type': 'application/json'},
     ));
   }
 
-  void setAccessToken(String token) {
+  void setAccessToken(String? token) {
     _accessToken = token;
-    _dio.options.headers['Authorization'] = 'Bearer $token';
+    if (token != null) {
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+    } else {
+      _dio.options.headers.remove('Authorization');
+    }
   }
 
   void clearToken() {

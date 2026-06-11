@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../transactions/presentation/providers/transaction_provider.dart';
-import '../../../categories/presentation/screens/categories_screen.dart';
+
+import '../../../../core/services/card_detector_service.dart';
+import '../../../../core/services/card_storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/pro_app_bar.dart';
+import '../../../transactions/presentation/providers/transaction_provider.dart';
+import '../providers/cards_provider.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<TransactionProvider>();
-    final balance =
-        (provider.summary?['balance'] as num?)?.toDouble() ?? 0.0;
-    final income =
-        (provider.summary?['total_income'] as num?)?.toDouble() ?? 0.0;
+    final txProvider = context.watch<TransactionProvider>();
+    final cardsProvider = context.watch<CardsProvider>();
+    final balance = (txProvider.summary?['balance'] as num?)?.toDouble() ?? 0.0;
+    final income = (txProvider.summary?['total_income'] as num?)?.toDouble() ?? 0.0;
     // Backend key is `total_expenses` (plural). Keep fallback for mock data.
-    final expense = ((provider.summary?['total_expenses']
-                ?? provider.summary?['total_expense']) as num?)
+    final expense = ((txProvider.summary?['total_expenses']
+                ?? txProvider.summary?['total_expense']) as num?)
             ?.toDouble() ??
         0.0;
 
@@ -30,54 +32,29 @@ class WalletScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         children: [
-          // Premium bank card
           _BankCard(balance: balance),
           const SizedBox(height: 24),
 
-          // Quick actions
-          Row(
-            children: [
-              _QuickAction(
-                  icon: Icons.add, label: 'Add Funds', color: AppColors.secondary),
-              const SizedBox(width: 12),
-              _QuickAction(
-                  icon: Icons.send,
-                  label: 'Transfer',
-                  color: AppColors.primary),
-              const SizedBox(width: 12),
-              _QuickAction(
-                  icon: Icons.swap_horiz,
-                  label: 'Exchange',
-                  color: AppColors.primary500),
-              const SizedBox(width: 12),
-              _QuickAction(
-                  icon: Icons.more_horiz,
-                  label: 'More',
-                  color: AppColors.neutral700),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Card usage stats
           Text('CARD USAGE', style: AppTextStyles.label),
           const SizedBox(height: 8),
           AppCard(
             child: Column(
               children: [
                 _UsageStat(
-                  label: 'Total Income',
-                  value: CurrencyFormatter.format(income),
-                  icon: Icons.arrow_upward,
-                  color: AppColors.income,
-                  pct: income == 0 ? 0 : 0.75,
-                ),
+                    label: 'Total Income',
+                    value: CurrencyFormatter.format(income),
+                    icon: Icons.arrow_upward,
+                    color: AppColors.income,
+                    pct: income == 0 ? 0 : 0.75),
                 const SizedBox(height: 16),
                 _UsageStat(
                   label: 'Total Expenses',
                   value: CurrencyFormatter.format(expense),
                   icon: Icons.arrow_downward,
                   color: AppColors.expense,
-                  pct: income == 0 ? 0 : (expense / (income == 0 ? 1 : income)).clamp(0.0, 1.0),
+                  pct: income == 0
+                      ? 0
+                      : (expense / (income == 0 ? 1 : income)).clamp(0.0, 1.0),
                 ),
                 const SizedBox(height: 16),
                 _UsageStat(
@@ -87,46 +64,95 @@ class WalletScreen extends StatelessWidget {
                       : '${((income - expense) / income * 100).toStringAsFixed(1)}%',
                   icon: Icons.savings_outlined,
                   color: AppColors.primary,
-                  pct: income == 0 ? 0 : ((income - expense) / income).clamp(0.0, 1.0),
+                  pct: income == 0
+                      ? 0
+                      : ((income - expense) / income).clamp(0.0, 1.0),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // Cards list
-          Text('MY CARDS', style: AppTextStyles.label),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('MY CARDS', style: AppTextStyles.label),
+              Text('${cardsProvider.cards.length} saved',
+                  style: AppTextStyles.bodySecondary),
+            ],
+          ),
           const SizedBox(height: 8),
-          ..._buildCardsList(),
+          if (cardsProvider.isLoading && cardsProvider.cards.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (cardsProvider.cards.isEmpty)
+            const _EmptyCards()
+          else
+            ...cardsProvider.cards.map(
+              (c) => Padding(
+                key: ValueKey(c.id),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Color(c.color).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.credit_card,
+                            color: Color(c.color), size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(c.cardholderName.isNotEmpty
+                                ? c.cardholderName
+                                : '${c.brand} ${c.bank}'),
+                            Text('${c.brand} • **** ${c.last4}',
+                                style: AppTextStyles.bodySecondary),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Expires', style: AppTextStyles.label),
+                          Text(c.expiry, style: AppTextStyles.bodyMedium),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            color: AppColors.expense, size: 20),
+                        onPressed: () => _confirmDelete(context, c),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.primary),
               minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {},
+            onPressed: () => _showAddCardSheet(context),
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Add New Card'),
-          ),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              minimumSize: const Size(double.infinity, 48),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CategoriesScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.label_outline, size: 18),
-            label: const Text('Manage categories'),
           ),
           const SizedBox(height: 24),
         ],
@@ -134,50 +160,71 @@ class WalletScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildCardsList() {
-    final cards = [
-      ('Visa Platinum', '**** 4821', AppColors.primary, '03/28'),
-      ('Mastercard Gold', '**** 9012', AppColors.neutral700, '11/27'),
-    ];
-
-    return cards.map((c) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: c.$3.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.credit_card, color: c.$3, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c.$1, style: AppTextStyles.bodyMedium),
-                    Text(c.$2, style: AppTextStyles.bodySecondary),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('Expires', style: AppTextStyles.label),
-                  Text(c.$4, style: AppTextStyles.bodyMedium),
-                ],
-              ),
-            ],
+  Future<void> _confirmDelete(BuildContext context, StoredCard c) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete card?'),
+        content: Text('${c.brand} • **** ${c.last4} will be removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.expense),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final removed =
+        await context.read<CardsProvider>().removeCard(c.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(removed ? 'Card removed' : 'Could not remove card'),
+        backgroundColor: removed ? AppColors.income : AppColors.expense,
+      ),
+    );
+  }
+
+  void _showAddCardSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _AddCardSheet(),
+    );
+  }
+}
+
+class _EmptyCards extends StatelessWidget {
+  const _EmptyCards();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Icon(Icons.credit_card_off_outlined,
+                size: 40, color: AppColors.neutral400),
+            const SizedBox(height: 8),
+            Text('No cards yet', style: AppTextStyles.bodyMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Add one to track spending and see it on the dashboard.',
+              style: AppTextStyles.bodySecondary,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      );
-    }).toList();
+      ),
+    );
   }
 }
 
@@ -209,7 +256,6 @@ class _BankCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Decorative circle
           Positioned(
             right: -30,
             top: -30,
@@ -250,8 +296,8 @@ class _BankCard extends StatelessWidget {
               const Spacer(),
               Text(
                 CurrencyFormatter.format(balance),
-                style: AppTextStyles.amount.copyWith(
-                    color: AppColors.white, fontSize: 30),
+                style: AppTextStyles.amount
+                    .copyWith(color: AppColors.white, fontSize: 30),
               ),
               const SizedBox(height: 4),
               Text('Available Balance',
@@ -262,8 +308,8 @@ class _BankCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('**** **** **** 4821',
-                      style: AppTextStyles.body
-                          .copyWith(color: Colors.white70, letterSpacing: 2)),
+                      style: AppTextStyles.body.copyWith(
+                          color: Colors.white70, letterSpacing: 2)),
                   Text('03/28',
                       style: AppTextStyles.bodySecondary
                           .copyWith(color: Colors.white54)),
@@ -272,42 +318,6 @@ class _BankCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Quick action button ───────────────────────────────────────────────────────
-class _QuickAction extends StatelessWidget {
-  const _QuickAction(
-      {required this.icon, required this.label, required this.color});
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {},
-        child: Column(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 6),
-            Text(label,
-                style: AppTextStyles.label.copyWith(fontSize: 10),
-                textAlign: TextAlign.center),
-          ],
-        ),
       ),
     );
   }
@@ -344,12 +354,9 @@ class _UsageStat extends StatelessWidget {
               child: Icon(icon, color: color, size: 14),
             ),
             const SizedBox(width: 10),
-            Expanded(
-                child:
-                    Text(label, style: AppTextStyles.bodyMedium)),
+            Expanded(child: Text(label, style: AppTextStyles.bodyMedium)),
             Text(value,
-                style: AppTextStyles.amountSmall
-                    .copyWith(color: color)),
+                style: AppTextStyles.amountSmall.copyWith(color: color)),
           ],
         ),
         const SizedBox(height: 8),
@@ -363,6 +370,206 @@ class _UsageStat extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Add Card Sheet ───────────────────────────────────────────────────────────
+class _AddCardSheet extends StatefulWidget {
+  const _AddCardSheet();
+
+  @override
+  State<_AddCardSheet> createState() => _AddCardSheetState();
+}
+
+class _AddCardSheetState extends State<_AddCardSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _cardNumberCtrl = TextEditingController();
+  final _expiryCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  String? _detectedBrand;
+  String? _detectedBank;
+
+  // Brand → accent color used for the card icon. A real product would have
+  // its own design tokens per brand.
+  static const Map<String, int> _brandColors = {
+    'Visa': 0xFF1A237E,
+    'Mastercard': 0xFFFFA000,
+    'Amex': 0xFF006FCF,
+    'Other': 0xFF616161,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _cardNumberCtrl.addListener(_onCardNumberChanged);
+  }
+
+  void _onCardNumberChanged() {
+    final result = CardDetectorService.instance.detectCard(_cardNumberCtrl.text);
+    if (!mounted) return;
+    setState(() {
+      _detectedBrand = result?.type;
+      _detectedBank = result?.bank;
+    });
+  }
+
+  @override
+  void dispose() {
+    _cardNumberCtrl.removeListener(_onCardNumberChanged);
+    _cardNumberCtrl.dispose();
+    _expiryCtrl.dispose();
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  String? _validateRequired(String? v, {int minLength = 1}) {
+    if (v == null || v.trim().length < minLength) return 'Required';
+    return null;
+  }
+
+  String? _validateCardNumber(String? v) {
+    final digits = v?.replaceAll(RegExp(r'\D'), '') ?? '';
+    if (digits.length < 13 || digits.length > 19) {
+      return 'Enter a valid card number';
+    }
+    return null;
+  }
+
+  String? _validateExpiry(String? v) {
+    if (v == null || !RegExp(r'^\d{2}/\d{2}$').hasMatch(v.trim())) {
+      return 'Use MM/YY format';
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final digits = _cardNumberCtrl.text.replaceAll(RegExp(r'\D'), '');
+    final last4 = digits.length >= 4
+        ? digits.substring(digits.length - 4)
+        : digits.padLeft(4, '0');
+    final brand = _detectedBrand ?? 'Other';
+    final bank = _detectedBank ?? 'Generic';
+    final color = _brandColors[brand] ?? _brandColors['Other']!;
+
+    final newCard = StoredCard(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      brand: brand,
+      bank: bank,
+      last4: last4,
+      expiry: _expiryCtrl.text.trim(),
+      cardholderName: _nameCtrl.text.trim(),
+      color: color,
+    );
+
+    final ok = await context.read<CardsProvider>().addCard(newCard);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$brand card added successfully')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save the card')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Add New Card', style: AppTextStyles.headlineSmall),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_detectedBrand != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.income.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.credit_card,
+                        size: 16, color: AppColors.income),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$_detectedBrand — $_detectedBank',
+                      style: const TextStyle(
+                          color: AppColors.income,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            TextFormField(
+              controller: _cardNumberCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Card number',
+                hintText: '1234 5678 9012 3456',
+              ),
+              validator: _validateCardNumber,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _expiryCtrl,
+              keyboardType: TextInputType.datetime,
+              decoration: const InputDecoration(
+                labelText: 'Expiry',
+                hintText: 'MM/YY',
+              ),
+              validator: _validateExpiry,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Cardholder name',
+                hintText: 'Jane Doe',
+              ),
+              validator: (v) => _validateRequired(v, minLength: 2),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: _submit,
+              child: const Text('Add Card'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
