@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/pro_app_bar.dart';
+import '../../../transactions/domain/entities/category.dart';
+import '../../../transactions/presentation/providers/transaction_provider.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -12,7 +16,78 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
+  // Stub data shown in the "Extracted Data" card. In a real flow this would
+  // come from `InvoiceScannerService.extractTotalFromImage`. Kept here so
+  // the UI flow (including "save as transaction") is end-to-end testable
+  // without a camera or real image.
+  static const double _extractedTotal = 142.50;
+  static const String _extractedMerchant = 'Sample Merchant Inc.';
+  static final DateTime _extractedDate = DateTime(2026, 3, 23);
+
   bool _scanned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-load expense categories so the "save as transaction" picker has
+    // data to show even if the user lands here directly.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TransactionProvider>().loadCategories(type: 'EXPENSE');
+    });
+  }
+
+  Future<void> _saveAsTransaction() async {
+    final provider = context.read<TransactionProvider>();
+    // Make sure categories are loaded in case the post-frame callback above
+    // ran before the provider was ready (e.g. the user opened the tab
+    // before login completed).
+    if (provider.categories.isEmpty) {
+      await provider.loadCategories(type: 'EXPENSE');
+    }
+    if (!mounted) return;
+
+    final expenseCategories = provider.categories
+        .where((c) => c.type.toUpperCase() == 'EXPENSE')
+        .toList();
+
+    if (expenseCategories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No expense categories found. Create one in the categories screen first.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<Category>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CategoryPickerSheet(categories: expenseCategories),
+    );
+    if (selected == null || !mounted) return;
+
+    final ok = await provider.addTransaction(
+      categoryId: selected.id,
+      type: 'EXPENSE',
+      amount: _extractedTotal,
+      description: _extractedMerchant,
+      transactionDate: _extractedDate,
+    );
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Saved invoice as expense in ${selected.name}'
+            : provider.error ?? 'Could not save the transaction.'),
+        backgroundColor: ok ? AppColors.income : AppColors.expense,
+      ),
+    );
+    if (ok) setState(() => _scanned = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,13 +192,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
             AppCard(
               child: Column(
                 children: [
-                  _DataRow('Merchant', 'Sample Merchant Inc.'),
+                  _DataRow('Merchant', _extractedMerchant),
                   const Divider(height: 24),
                   _DataRow('Date', 'Mar 23, 2026'),
                   const Divider(height: 24),
-                  _DataRow('Total', '\$142.50'),
+                  _DataRow('Total', CurrencyFormatter.format(_extractedTotal)),
                   const Divider(height: 24),
-                  _DataRow('Category', 'Supplies'),
+                  _DataRow('Type', 'Expense'),
                   const SizedBox(height: 20),
                   Row(children: [
                     Expanded(
@@ -134,13 +209,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Transaction saved from invoice')));
-                          setState(() => _scanned = false);
-                        },
+                        onPressed: _saveAsTransaction,
                         child: const Text('Confirm & Save'),
                       ),
                     ),
@@ -342,6 +411,68 @@ class _DataRow extends StatelessWidget {
         Text(label, style: AppTextStyles.bodySecondary),
         Text(value, style: AppTextStyles.bodyMedium),
       ],
+    );
+  }
+}
+
+// ── Category picker (used by "Confirm & Save") ────────────────────────────────
+class _CategoryPickerSheet extends StatelessWidget {
+  const _CategoryPickerSheet({required this.categories});
+  final List<Category> categories;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Pick a category', style: AppTextStyles.headlineSmall),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose the expense category for this invoice.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: categories.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (_, i) {
+                final c = categories[i];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(c.name, style: AppTextStyles.bodyMedium),
+                  trailing: const Icon(Icons.chevron_right,
+                      color: AppColors.neutral500),
+                  onTap: () => Navigator.pop(context, c),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -39,10 +39,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TransactionProvider>();
+    // Backend key is `total_expenses` (plural). Keep fallback for mock data.
     final income =
         (provider.summary?['total_income'] as num?)?.toDouble() ?? 0.0;
-    final expense =
-        (provider.summary?['total_expense'] as num?)?.toDouble() ?? 0.0;
+    final expense = ((provider.summary?['total_expenses']
+                ?? provider.summary?['total_expense']) as num?)
+            ?.toDouble() ??
+        0.0;
     final balance =
         (provider.summary?['balance'] as num?)?.toDouble() ?? 0.0;
 
@@ -170,8 +173,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildCategoryRows(TransactionProvider provider) {
-    final byCategory =
-        (provider.summary?['by_category'] as List<dynamic>?) ?? [];
+    final byCategory = provider.byCategoryBreakdown;
     final query = _searchCtrl.text.toLowerCase();
 
     final filtered = byCategory

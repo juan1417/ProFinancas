@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
@@ -10,13 +11,16 @@ class AuthProvider extends ChangeNotifier {
     required LoginUseCase loginUseCase,
     required RegisterUseCase registerUseCase,
     required LogoutUseCase logoutUseCase,
+    required AuthRepository repository,
   })  : _login = loginUseCase,
         _register = registerUseCase,
-        _logout = logoutUseCase;
+        _logout = logoutUseCase,
+        _repository = repository;
 
   final LoginUseCase _login;
   final RegisterUseCase _register;
   final LogoutUseCase _logout;
+  final AuthRepository _repository;
 
   User? currentUser;
   String? _refreshToken;
@@ -76,5 +80,63 @@ class AuthProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     isLoading = value;
     notifyListeners();
+  }
+
+  /// Patches the current user's profile and updates the local `currentUser`
+  /// on success. Pass `null` for any field you want to leave untouched.
+  Future<bool> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? username,
+  }) async {
+    if (currentUser == null) {
+      error = 'No active session.';
+      notifyListeners();
+      return false;
+    }
+    _setLoading(true);
+    try {
+      final updated = await _repository.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        username: username,
+      );
+      currentUser = updated;
+      error = null;
+      return true;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Changes the password of the currently authenticated user. Returns
+  /// `true` on success; the error is available on [error] for the caller
+  /// to show in a snackbar/dialog.
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    if (currentUser == null) {
+      error = 'No active session.';
+      notifyListeners();
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _repository.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      error = null;
+      return true;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 }

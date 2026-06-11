@@ -28,12 +28,17 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> getProfile() => _datasource.getProfile();
 
   @override
-  Future<User> updateProfile({String? firstName, String? lastName, String? username}) {
-    throw UnimplementedError('updateProfile not yet implemented');
-  }
+  Future<User> updateProfile({String? firstName, String? lastName, String? username}) =>
+      _datasource.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        username: username,
+      );
 
   @override
-  Future<void> changePassword({required String oldPassword, required String newPassword}) {
-    throw UnimplementedError('changePassword not yet implemented');
-  }
+  Future<void> changePassword({required String oldPassword, required String newPassword}) =>
+      _datasource.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
 }

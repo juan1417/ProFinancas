@@ -41,7 +41,8 @@ class ProFinancasApp extends StatelessWidget {
             loginUseCase: LoginUseCase(authRepo),
             registerUseCase: RegisterUseCase(authRepo),
             logoutUseCase: LogoutUseCase(authRepo),
-          ),
+            repository: authRepo,
+          )..tryRestoreSession(),
         ),
         ChangeNotifierProvider(
           create: (_) => TransactionProvider(

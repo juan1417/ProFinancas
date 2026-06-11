@@ -66,9 +66,14 @@ class _PortfolioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Backend returns `total_expenses` (plural). Keep `total_expense` as a
+    // fallback so mock data and any older payload still work.
     final balance = (provider.summary?['balance'] as num?)?.toDouble() ?? 0.0;
     final income = (provider.summary?['total_income'] as num?)?.toDouble() ?? 0.0;
-    final expenses = (provider.summary?['total_expense'] as num?)?.toDouble() ?? 0.0;
+    final expenses = ((provider.summary?['total_expenses']
+                ?? provider.summary?['total_expense']) as num?)
+            ?.toDouble() ??
+        0.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -191,8 +196,10 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final expenses =
-        (provider.summary?['total_expense'] as num?)?.toDouble() ?? 0.0;
+    final expenses = ((provider.summary?['total_expenses']
+                ?? provider.summary?['total_expense']) as num?)
+            ?.toDouble() ??
+        0.0;
     const budget = 5000.0;
     final progress = (expenses / budget).clamp(0.0, 1.0);
     final remaining = budget - expenses;
@@ -265,8 +272,7 @@ class _ExpenseAllocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final byCategory =
-        (provider.summary?['by_category'] as List<dynamic>?) ?? [];
+    final byCategory = provider.byCategoryBreakdown;
 
     final sections = byCategory.isEmpty
         ? [PieChartSectionData(value: 1, color: AppColors.neutral200, radius: 28, showTitle: false)]
