@@ -124,6 +124,19 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_PAGINATION_CLASS': None,  # Finanzas personales: a lo sumo cientos de items por usuario, no necesitamos paginar. Si crece, se reactiva.
+    # Rate limiting para evitar brute force en /api/auth/login/ y
+    # /api/auth/register/. Limites: 10/min para login, 5/hora para
+    # register. Configurable desde env si se quiere tunear.
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/min',
+        'user': '600/min',
+        'login': os.getenv('THROTTLE_LOGIN', '10/min'),
+        'register': os.getenv('THROTTLE_REGISTER', '5/hour'),
+    },
 }
 
 # ─── SimpleJWT ────────────────────────────────────────────────────────────────
