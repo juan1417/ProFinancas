@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
+import '../../../categories/presentation/screens/categories_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -109,6 +110,23 @@ class WalletScreen extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Add New Card'),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CategoriesScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.label_outline, size: 18),
+            label: const Text('Manage categories'),
           ),
           const SizedBox(height: 24),
         ],
