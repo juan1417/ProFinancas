@@ -17,8 +17,11 @@ class WalletScreen extends StatelessWidget {
         (provider.summary?['balance'] as num?)?.toDouble() ?? 0.0;
     final income =
         (provider.summary?['total_income'] as num?)?.toDouble() ?? 0.0;
-    final expense =
-        (provider.summary?['total_expense'] as num?)?.toDouble() ?? 0.0;
+    // Backend key is `total_expenses` (plural). Keep fallback for mock data.
+    final expense = ((provider.summary?['total_expenses']
+                ?? provider.summary?['total_expense']) as num?)
+            ?.toDouble() ??
+        0.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,

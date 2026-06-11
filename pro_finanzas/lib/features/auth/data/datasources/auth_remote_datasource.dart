@@ -1,12 +1,15 @@
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_constants.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/errors/dio_error_mapper.dart';
 import '../models/user_model.dart';
 import 'package:dio/dio.dart';
 
 class AuthRemoteDatasource {
-  const AuthRemoteDatasource(this._client);
+  AuthRemoteDatasource(this._client)
+      : _errors = DioErrorMapper(ApiConstants.baseUrl);
   final ApiClient _client;
+  final DioErrorMapper _errors;
 
   Future<({UserModel user, String accessToken, String refreshToken})> login({
     required String email,
@@ -53,7 +56,41 @@ class AuthRemoteDatasource {
       final response = await _client.get(ApiConstants.profile);
       return UserModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw _errors.map(e);
+    }
+  }
+
+  Future<UserModel> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? username,
+  }) async {
+    // Only send fields the caller actually wants to change. The backend
+    // treats omitted fields as "keep existing".
+    final body = <String, dynamic>{};
+    if (firstName != null) body['first_name'] = firstName;
+    if (lastName != null) body['last_name'] = lastName;
+    if (username != null) body['username'] = username;
+    try {
+      final response = await _client.patch(ApiConstants.profile, data: body);
+      return UserModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _errors.map(e);
+    }
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _client.post(ApiConstants.changePassword, data: {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+        'new_password_confirm': newPassword,
+      });
+    } on DioException catch (e) {
+      throw _errors.map(e);
     }
   }
 
