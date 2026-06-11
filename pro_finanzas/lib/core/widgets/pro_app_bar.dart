@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../../features/auth/presentation/screens/profile_screen.dart';
 
 class ProAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ProAppBar({super.key, this.avatarUrl, this.title = 'Profiancas'});
@@ -15,14 +16,17 @@ class ProAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: AppColors.primary100,
-          backgroundImage:
-              avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-          child: avatarUrl == null
-              ? const Icon(Icons.person, color: AppColors.primary, size: 18)
-              : null,
+        child: GestureDetector(
+          onTap: () => _openProfile(context),
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.primary100,
+            backgroundImage:
+                avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+            child: avatarUrl == null
+                ? const Icon(Icons.person, color: AppColors.primary, size: 18)
+                : null,
+          ),
         ),
       ),
       title: Text(title,
@@ -32,10 +36,16 @@ class ProAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.notifications_outlined,
               color: AppColors.black, size: 22),
-          onPressed: () {},
+          onPressed: () => _openProfile(context),
         ),
         const SizedBox(width: 8),
       ],
+    );
+  }
+
+  void _openProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );
   }
 
