@@ -293,17 +293,25 @@ class _BarChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxY =
-        [income, expense, 1.0].reduce((a, b) => a > b ? a : b) * 1.25;
+    // Compute real per-month totals from the loaded transactions.
+    // Falls back to an empty list when the user has no transactions at
+    // all, in which case the chart shows zero bars (the empty state
+    // above the chart already explains why).
+    final monthly = context.watch<TransactionProvider>().monthlyTotals();
+    final maxY = monthly
+            .expand((m) => [m['income'] as double, m['expense'] as double])
+            .fold<double>(0.0, (a, b) => a > b ? a : b) *
+        1.25;
+    final safeMaxY = maxY < 1.0 ? 1.0 : maxY;
 
     return BarChart(
       BarChartData(
-        maxY: maxY,
+        maxY: safeMaxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (_) => const FlLine(
-            color: AppColors.neutral200, strokeWidth: 1),
+              color: AppColors.neutral200, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
@@ -321,12 +329,12 @@ class _BarChartWidget extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (v, _) {
-                const months = [
-                  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'
-                ];
                 final i = v.toInt();
-                if (i < 0 || i >= months.length) return const SizedBox();
-                return Text(months[i], style: AppTextStyles.label);
+                if (i < 0 || i >= monthly.length) {
+                  return const SizedBox();
+                }
+                return Text(monthly[i]['label'] as String,
+                    style: AppTextStyles.label);
               },
             ),
           ),
@@ -335,21 +343,20 @@ class _BarChartWidget extends StatelessWidget {
           rightTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false)),
         ),
-        barGroups: List.generate(6, (i) {
-          final iIncome = i == 2 ? income : income * (0.6 + i * 0.08);
-          final iExpense = i == 2 ? expense : expense * (0.5 + i * 0.1);
+        barGroups: List.generate(monthly.length, (i) {
+          final m = monthly[i];
           return BarChartGroupData(
             x: i,
             barRods: [
               BarChartRodData(
-                toY: iIncome,
+                toY: m['income'] as double,
                 color: AppColors.primary,
                 width: 10,
                 borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(4)),
               ),
               BarChartRodData(
-                toY: iExpense,
+                toY: m['expense'] as double,
                 color: AppColors.tertiary500,
                 width: 10,
                 borderRadius: const BorderRadius.vertical(

@@ -129,6 +129,61 @@ class TransactionProvider extends ChangeNotifier {
     }).toList();
   }
 
+  /// Returns the last [months] months of income/expense aggregated by
+  /// calendar month, ordered oldest-to-newest. The first element of
+  /// the returned list is [months] months back; the last one is the
+  /// current month.
+  ///
+  /// The previous version of the analytics bar chart hardcoded the
+  /// shape of the data (`income * (0.6 + i * 0.08)`) so the chart
+  /// didn't reflect the user's actual finances. This getter computes
+  /// the real per-month totals from the loaded transactions list.
+  ///
+  /// Each item is `{ month: int (1-12), year: int, label: 'Jan', income: double, expense: double }`.
+  List<Map<String, dynamic>> monthlyTotals({int months = 6}) {
+    assert(months > 0, 'months must be positive');
+    final now = DateTime.now();
+    // Build the bucket list oldest-to-newest.
+    final buckets = <DateTime>[];
+    for (var i = months - 1; i >= 0; i--) {
+      final d = DateTime(now.year, now.month - i, 1);
+      buckets.add(d);
+    }
+    final result = buckets.map((d) {
+      return <String, dynamic>{
+        'month': d.month,
+        'year': d.year,
+        'label': _monthLabel(d.month),
+        'income': 0.0,
+        'expense': 0.0,
+      };
+    }).toList();
+
+    for (final tx in transactions) {
+      final m = tx.transactionDate.month;
+      final y = tx.transactionDate.year;
+      for (final r in result) {
+        if (r['month'] == m && r['year'] == y) {
+          if (tx.isIncome) {
+            r['income'] = (r['income'] as double) + tx.amount;
+          } else if (tx.isExpense) {
+            r['expense'] = (r['expense'] as double) + tx.amount;
+          }
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  String _monthLabel(int m) {
+    const labels = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return labels[(m - 1).clamp(0, 11)];
+  }
+
   void _setLoading(bool value) {
     isLoading = value;
     notifyListeners();

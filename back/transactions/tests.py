@@ -158,17 +158,25 @@ class TestTransactionModel(TestCase):
         self.assertIn('1000', str(transaction))
     
     def test_transaction_type_category_mismatch(self):
-        """Test: Validar que el tipo de transacción coincida con el tipo de categoría"""
-        with self.assertRaises(ValidationError):
-            transaction = Transaction(
-                user=self.user,
-                category=self.expense_category,
-                type='INCOME',  # Tipo incorrecto
-                amount=Decimal('100.00'),
-                description='Test',
-                transaction_date=timezone.now()
-            )
-            transaction.save()
+        """Test: Validar que el tipo de transacción coincida con el tipo de categoría.
+
+        Esta validacion ahora vive en TransactionSerializer.validate()
+        (ver serializers.py) en vez de en el modelo, porque el
+        modelo.save() con full_clean() era una validacion duplicada
+        que se rompia en updates parciales via DRF. La regla de
+        negocio sigue activa — solo se ejecuta en otro lugar."""
+        from rest_framework.exceptions import ValidationError as DRFValidation
+        from transactions.serializers import TransactionSerializer
+        serializer = TransactionSerializer(data={
+            'user': self.user.id,
+            'category': self.expense_category.id,
+            'type': 'INCOME',  # Tipo incorrecto
+            'amount': '100.00',
+            'description': 'Test',
+            'transaction_date': timezone.now().isoformat(),
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('type', serializer.errors)
     
     def test_transaction_negative_amount(self):
         """Test: El monto debe ser positivo"""

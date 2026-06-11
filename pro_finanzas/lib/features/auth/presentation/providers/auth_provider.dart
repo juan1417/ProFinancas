@@ -67,6 +67,13 @@ class AuthProvider extends ChangeNotifier {
       currentUser = null;
       _refreshToken = null;
       ApiClient.instance.clearToken();
+      // Clear any saved biometric credentials too. Without this, the
+      // next app launch would silently re-login via
+      // tryRestoreSession without prompting for biometrics again,
+      // which is a security bypass: the user explicitly logged out
+      // and expects to need to sign in (and re-authorize biometry)
+      // on the next launch.
+      await SecureStorageService.clearBiometricCredentials();
       notifyListeners();
     }
   }
