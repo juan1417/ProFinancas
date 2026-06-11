@@ -1,10 +1,14 @@
 /// Maps a [DioException] to a user-friendly [AppException] with a message
 /// that actually tells the user what went wrong.
 ///
-/// Without this, every non-2xx response (and any transport-level failure)
-/// would collapse into a generic "Error de conexión" message, leaving the
-/// user unable to tell whether the backend was down, the URL was wrong,
-/// cleartext HTTP was blocked, or the request just timed out.
+/// The previous implementation collapsed every non-2xx response (and any
+/// transport-level failure) into the generic
+///   "Error de conexión. Verifica tu red."
+/// which left users (and us) guessing whether the backend was down, the
+/// URL was wrong, cleartext HTTP was blocked, or the request just timed out.
+///
+/// This mapper inspects [DioException.type] and the response to produce a
+/// specific, actionable message.
 library;
 
 import 'package:dio/dio.dart';
@@ -39,6 +43,9 @@ class DioErrorMapper {
       );
     }
 
+    // No HTTP response — a transport-level failure. The user almost
+    // certainly sees this as "no tienes conexión"; here we tell them
+    // which of the common causes is most likely.
     return NetworkException(_transportMessage(e));
   }
 
@@ -61,6 +68,7 @@ class DioErrorMapper {
       case DioExceptionType.cancel:
         return 'La petición fue cancelada.';
       case DioExceptionType.badResponse:
+        // Should have been handled by the status code branches above.
         return 'Respuesta inválida del servidor ($uri).';
       case DioExceptionType.unknown:
         if (e.error != null) {
