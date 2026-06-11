@@ -59,6 +59,14 @@ class TransactionService:
         """
         Returns transactions grouped by category with totals.
         """
+        # If both dates are provided, sanity-check that they are
+        # ordered. Otherwise the result is silently empty and the
+        # user has no idea their query was wrong.
+        if start_date and end_date and start_date > end_date:
+            raise ValueError(
+                'start_date must be on or before end_date. '
+                f'Got start_date={start_date}, end_date={end_date}.'
+            )
         if transaction_type in ['INCOME', 'EXPENSE']:
             queryset = queryset.filter(type=transaction_type)
         if start_date:

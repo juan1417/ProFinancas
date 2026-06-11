@@ -1,9 +1,7 @@
-import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import '../datasources/transaction_remote_datasource.dart';
 import '../models/transaction_model.dart';
-import '../models/category_model.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
   const TransactionRepositoryImpl(this._datasource);
@@ -49,18 +47,4 @@ class TransactionRepositoryImpl implements TransactionRepository {
     String? endDate,
   }) =>
       _datasource.getSummary(period: period, startDate: startDate, endDate: endDate);
-
-  @override
-  Future<List<Category>> getCategories({String? type, bool? isActive}) =>
-      _datasource.getCategories(type: type, isActive: isActive);
-
-  @override
-  Future<Category> createCategory({
-    required String name,
-    required String type,
-    String? description,
-  }) =>
-      _datasource.createCategory(
-        CategoryModel(id: 0, name: name, type: type, description: description).toJson(),
-      );
 }

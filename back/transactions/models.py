@@ -139,19 +139,9 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.get_type_display()}: {self.amount} - {self.description}"
     
-    def clean(self):
-        """
-        Validación personalizada para asegurar que el tipo de transacción
-        coincide con el tipo de categoría.
-        """
-        from django.core.exceptions import ValidationError
-        
-        if self.category and self.type != self.category.type:
-            raise ValidationError({
-                'category': f'La categoría debe ser de tipo {self.get_type_display()}'
-            })
-    
-    def save(self, *args, **kwargs):
-        """Override save to call clean() for validation"""
-        self.full_clean()
-        super().save(*args, **kwargs)
+    # Note: la validacion "type coincide con category.type" se valida
+    # en TransactionSerializer.validate() (ver serializers.py). Anteriormente
+    # existia un clean() + full_clean() aqui, pero era una validacion
+    # duplicada y rompiable en updates parciales via DRF (el save()
+    # se invoca sin pasar por el form completo). Se elimino para evitar
+    # esa clase de bugs.

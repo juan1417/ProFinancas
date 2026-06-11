@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -98,10 +98,16 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_category(self, request):
         """GET /transactions/by_category/"""
-        data = TransactionService.get_by_category(
-            self.get_queryset(),
-            transaction_type=request.query_params.get('type'),
-            start_date=request.query_params.get('start_date'),
-            end_date=request.query_params.get('end_date'),
-        )
+        try:
+            data = TransactionService.get_by_category(
+                self.get_queryset(),
+                transaction_type=request.query_params.get('type'),
+                start_date=request.query_params.get('start_date'),
+                end_date=request.query_params.get('end_date'),
+            )
+        except ValueError as e:
+            # Inverted dates or similar input errors → 400 instead of
+            # silently returning an empty list.
+            return Response({'detail': str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
         return Response(data)

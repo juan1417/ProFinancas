@@ -1,10 +1,19 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .serializers import UserRegisterSerializer, UserProfileSerializer, ChangePasswordSerializer
 from .services import UserService
+
+
+class _RegisterThrottle(AnonRateThrottle):
+    scope = 'register'
+
+
+class _LoginThrottle(AnonRateThrottle):
+    scope = 'login'
 
 
 class RegisterView(generics.CreateAPIView):
@@ -14,6 +23,7 @@ class RegisterView(generics.CreateAPIView):
     """
     serializer_class = UserRegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [_RegisterThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -28,6 +38,7 @@ class LoginView(TokenObtainPairView):
     Autenticación con email y contraseña. Devuelve par de tokens JWT.
     """
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [_LoginThrottle]
 
 
 class LogoutView(APIView):

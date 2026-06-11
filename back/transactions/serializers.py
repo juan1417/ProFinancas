@@ -9,14 +9,19 @@ class CategorySerializer(serializers.ModelSerializer):
     Maneja la serialización y validación de categorías.
     """
     transactions_count = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Category
         fields = [
-            'id', 'name', 'type', 'description', 'user', 
+            'id', 'name', 'type', 'description', 'user',
             'is_active', 'created_at', 'updated_at', 'transactions_count'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'transactions_count']
+        # `user` is assigned server-side in CategoryViewSet.perform_create
+        # from request.user. Marking it read-only makes the serializer
+        # ignore it on input and the field stays "output only", so
+        # clients don't need to (and shouldn't) send it.
+        # See view.perform_create at transactions/views.py:37.
+        read_only_fields = ['user', 'created_at', 'updated_at', 'transactions_count']
     
     def get_transactions_count(self, obj):
         """Retorna el número de transacciones asociadas a esta categoría"""
@@ -72,7 +77,11 @@ class TransactionSerializer(serializers.ModelSerializer):
             'type', 'amount', 'description', 'notes', 'transaction_date',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'category_name', 'category_type']
+        # `user` is assigned server-side in TransactionViewSet.perform_create
+        # from request.user. The Flutter client doesn't have (or need)
+        # the user's UUID to POST a transaction, so we treat it as
+        # read-only on input.
+        read_only_fields = ['user', 'created_at', 'updated_at', 'category_name', 'category_type']
     
     def validate_amount(self, value):
         """Validación del monto de la transacción"""
