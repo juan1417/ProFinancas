@@ -17,6 +17,7 @@ import 'features/transactions/domain/usecases/get_transactions_usecase.dart';
 import 'features/transactions/domain/usecases/create_transaction_usecase.dart';
 import 'features/transactions/domain/usecases/get_summary_usecase.dart';
 import 'features/transactions/presentation/providers/transaction_provider.dart';
+import 'features/wallet/presentation/providers/cards_provider.dart';
 
 void main() {
   runApp(const ProFinancasApp());
@@ -50,6 +51,9 @@ class ProFinancasApp extends StatelessWidget {
             getSummary: GetSummaryUseCase(txRepo),
             repository: txRepo,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CardsProvider()..load(),
         ),
       ],
       child: MaterialApp(
