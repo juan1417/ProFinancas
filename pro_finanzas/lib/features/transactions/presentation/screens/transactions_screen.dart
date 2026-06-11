@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../domain/entities/transaction.dart';
+import '../../../categories/presentation/providers/category_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -294,7 +295,14 @@ class _AddTransactionSheetState extends State<_AddTransactionSheet> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionProvider>().loadCategories();
+      // Categories are owned by CategoryProvider (not by
+      // TransactionProvider) since feature/categories was split out.
+      // Reading from the dedicated provider avoids a redundant
+      // HTTP call that the old code made every time the sheet opened.
+      final cat = context.read<CategoryProvider>();
+      if (cat.all.isEmpty) {
+        cat.loadAll(isActive: true);
+      }
     });
   }
 
@@ -420,7 +428,10 @@ class _AddTransactionSheetState extends State<_AddTransactionSheet> {
               decoration:
                   const InputDecoration(labelText: 'Category'),
               value: _categoryId,
-              items: provider.categories
+              items: context
+                  .watch<CategoryProvider>()
+                  .all
+                  .where((c) => c.type.toUpperCase() == _type.toUpperCase())
                   .map((c) => DropdownMenuItem<int>(
                       value: c.id, child: Text(c.name)))
                   .toList(),

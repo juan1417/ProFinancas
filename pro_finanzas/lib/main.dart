@@ -61,13 +61,17 @@ class ProFinancasApp extends StatelessWidget {
             getSummary: GetSummaryUseCase(txRepo),
           ),
         ),
+        // Categories live in their own provider (feature/categories).
+        // Pre-load on boot so the dropdown in the Add Transaction
+        // sheet is populated without a network round-trip the first
+        // time the user opens it.
         ChangeNotifierProvider(
           create: (_) => CategoryProvider(
             listCategories: ListCategoriesUseCase(categoryRepo),
             createCategory: CreateCategoryUseCase(categoryRepo),
             updateCategory: UpdateCategoryUseCase(categoryRepo),
             deleteCategory: DeleteCategoryUseCase(categoryRepo),
-          ),
+          )..loadAll(isActive: true),
         ),
         ChangeNotifierProvider(
           create: (_) => CardsProvider()..load(),

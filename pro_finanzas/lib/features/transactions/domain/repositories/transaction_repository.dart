@@ -1,6 +1,10 @@
 import '../entities/transaction.dart';
-import '../entities/category.dart';
 
+/// Abstract contract the presentation layer talks to. Hides whether the data
+/// comes from the backend, a local cache, or a mock implementation.
+///
+/// Note: this repo only deals with transactions + summary. Categories
+/// live in their own repo at lib/features/categories/.../category_repository.dart.
 abstract class TransactionRepository {
   Future<List<Transaction>> getTransactions({
     String? type,
@@ -23,13 +27,5 @@ abstract class TransactionRepository {
     String period = 'month',
     String? startDate,
     String? endDate,
-  });
-
-  Future<List<Category>> getCategories({String? type, bool? isActive});
-
-  Future<Category> createCategory({
-    required String name,
-    required String type,
-    String? description,
   });
 }

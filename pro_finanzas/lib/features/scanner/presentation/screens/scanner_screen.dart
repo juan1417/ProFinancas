@@ -10,6 +10,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/pro_app_bar.dart';
 import '../../../../core/services/invoice_scanner_service.dart';
+import '../../../categories/presentation/providers/category_provider.dart';
 import '../../../transactions/domain/entities/category.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
 
@@ -125,20 +126,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   /// Ask the user to pick an expense category, then save the scanned total
-  /// as a transaction. Same flow I built before, but using the new
-  /// ScannedInvoice model.
+  /// as a transaction. Categories come from [CategoryProvider] (not
+  /// from [TransactionProvider], which doesn't own them).
   Future<void> _saveAsTransaction() async {
     if (_invoice == null) return;
-    final provider = context.read<TransactionProvider>();
-
-    if (provider.categories.isEmpty) {
-      await provider.loadCategories(type: 'EXPENSE');
+    final catProvider = context.read<CategoryProvider>();
+    if (catProvider.all.isEmpty) {
+      await catProvider.loadAll(isActive: true);
     }
     if (!mounted) return;
 
-    final expenseCategories = provider.categories
-        .where((c) => c.type.toUpperCase() == 'EXPENSE')
-        .toList();
+    final expenseCategories = catProvider.expenseCategories;
 
     if (expenseCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +161,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ? _invoice!.merchant
         : 'Scanned invoice';
 
-    final ok = await provider.addTransaction(
+    final txProvider = context.read<TransactionProvider>();
+    final ok = await txProvider.addTransaction(
       categoryId: selected.id,
       type: 'EXPENSE',
       amount: _invoice!.total,
@@ -175,7 +174,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       SnackBar(
         content: Text(ok
             ? 'Saved ${CurrencyFormatter.format(_invoice!.total)} as ${selected.name}'
-            : (provider.error ?? 'Could not save the transaction.')),
+            : (txProvider.error ?? 'Could not save the transaction.')),
         backgroundColor: ok ? AppColors.income : AppColors.expense,
       ),
     );

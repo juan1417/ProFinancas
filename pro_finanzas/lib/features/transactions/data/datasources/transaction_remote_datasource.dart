@@ -1,13 +1,19 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_constants.dart';
-import '../../../../core/errors/app_exception.dart';
-import '../models/category_model.dart';
+import '../../../../core/errors/dio_error_mapper.dart';
 import '../models/transaction_model.dart';
 
+/// Talks to the transactions + summary backend endpoints.
+///
+/// Categories are NOT served from here — they live in their own
+/// datasource at lib/features/categories/.../category_remote_datasource.dart.
 class TransactionRemoteDatasource {
-  const TransactionRemoteDatasource(this._client);
+  TransactionRemoteDatasource(this._client)
+      : _errors = DioErrorMapper(ApiConstants.baseUrl);
+
   final ApiClient _client;
+  final DioErrorMapper _errors;
 
   Future<List<TransactionModel>> getTransactions({
     String? type,
@@ -15,16 +21,19 @@ class TransactionRemoteDatasource {
     String? search,
   }) async {
     try {
-      final response = await _client.get(ApiConstants.transactions, queryParameters: {
-        if (type != null) 'type': type,
-        if (categoryId != null) 'category': categoryId,
-        if (search != null) 'search': search,
-      });
+      final response = await _client.get(
+        ApiConstants.transactions,
+        queryParameters: {
+          if (type != null) 'type': type,
+          if (categoryId != null) 'category': categoryId,
+          if (search != null) 'search': search,
+        },
+      );
       return (response.data as List)
           .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw _errors.map(e);
     }
   }
 
@@ -33,7 +42,7 @@ class TransactionRemoteDatasource {
       final response = await _client.post(ApiConstants.transactions, data: data);
       return TransactionModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw _errors.map(e);
     }
   }
 
@@ -41,7 +50,7 @@ class TransactionRemoteDatasource {
     try {
       await _client.delete('${ApiConstants.transactions}$id/');
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw _errors.map(e);
     }
   }
 
@@ -61,45 +70,7 @@ class TransactionRemoteDatasource {
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw _errors.map(e);
     }
-  }
-
-  Future<List<CategoryModel>> getCategories({String? type, bool? isActive}) async {
-    try {
-      final response = await _client.get(ApiConstants.categories, queryParameters: {
-        if (type != null) 'type': type,
-        if (isActive != null) 'is_active': isActive,
-      });
-      return (response.data as List)
-          .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    }
-  }
-
-  Future<CategoryModel> createCategory(Map<String, dynamic> data) async {
-    try {
-      final response = await _client.post(ApiConstants.categories, data: data);
-      return CategoryModel.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    }
-  }
-
-  AppException _handleDioError(DioException e) {
-    final statusCode = e.response?.statusCode;
-    if (statusCode == 401) return const AuthException();
-    if (statusCode == 400) {
-      final data = e.response?.data;
-      if (data is Map) {
-        final first = data.values.first;
-        final msg = first is List ? first.first.toString() : first.toString();
-        return ValidationException(msg);
-      }
-    }
-    if (statusCode == null) return const NetworkException();
-    return const ServerException();
   }
 }
