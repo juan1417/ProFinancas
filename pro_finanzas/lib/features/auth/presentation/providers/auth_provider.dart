@@ -5,6 +5,7 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/services/secure_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider({
@@ -80,6 +81,32 @@ class AuthProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     isLoading = value;
     notifyListeners();
+  }
+
+  /// Restore a previous session from secure storage. Called once on app
+  /// start. If credentials are stored, attempt a silent re-login so the
+  /// user lands in MainShell instead of LoginScreen.
+  ///
+  /// Returns `true` if a session was restored successfully.
+  Future<bool> tryRestoreSession() async {
+    final creds = await SecureStorageService.getBiometricCredentials();
+    if (creds == null) return false;
+    _setLoading(true);
+    try {
+      final result = await _login(
+        email: creds['email']!,
+        password: creds['password']!,
+      );
+      _setSession(result.user, result.accessToken, result.refreshToken);
+      return true;
+    } catch (_) {
+      // Stored credentials are invalid (e.g. password changed on the
+      // server). Wipe them so the user gets a clean login screen.
+      await SecureStorageService.clearBiometricCredentials();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   /// Patches the current user's profile and updates the local `currentUser`

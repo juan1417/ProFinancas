@@ -336,8 +336,10 @@ class _ResultCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.errorContainer,
+                color: AppColors.error.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.30)),
               ),
               child: Row(
                 children: [
@@ -348,7 +350,7 @@ class _ResultCard extends StatelessWidget {
                     child: Text(
                       errorMessage!,
                       style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.onErrorContainer),
+                          .copyWith(color: AppColors.error),
                     ),
                   ),
                 ],
