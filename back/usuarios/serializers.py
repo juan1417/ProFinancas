@@ -1,8 +1,31 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Like the default simple_jwt serializer, but accepts `email` as the
+    identifier field name in the request body.
+
+    The project's User model sets `USERNAME_FIELD = 'email'`, and
+    simple_jwt's `TokenObtainSerializer` already auto-detects that
+    when it builds its fields (see rest_framework_simplejwt line 38:
+    `username_field = get_user_model().USERNAME_FIELD`). So the base
+    serializer already accepts `email` on the wire and looks it up
+    via `attrs[self.username_field]`. We just override `get_token`
+    to enrich the JWT with our custom claims.
+    """
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['email'] = user.email
+        token['username'] = user.username
+        return token
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
