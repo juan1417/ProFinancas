@@ -11,15 +11,16 @@ class UserService:
         """
         Saves a validated UserRegisterSerializer, generates JWT tokens,
         and returns the user profile + token pair.
+
+        Response shape matches /api/auth/login/:
+            { user: {...}, access: str, refresh: str }
         """
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
         return {
             'user': UserProfileSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            },
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
         }
 
     @staticmethod
