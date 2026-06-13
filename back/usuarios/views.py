@@ -4,7 +4,12 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import UserRegisterSerializer, UserProfileSerializer, ChangePasswordSerializer
+from .serializers import (
+    EmailTokenObtainPairSerializer,
+    UserRegisterSerializer,
+    UserProfileSerializer,
+    ChangePasswordSerializer,
+)
 from .services import UserService
 
 
@@ -37,6 +42,7 @@ class LoginView(TokenObtainPairView):
     POST /api/auth/login/
     Autenticación con email y contraseña. Devuelve par de tokens JWT.
     """
+    serializer_class = EmailTokenObtainPairSerializer
     permission_classes = [permissions.AllowAny]
     throttle_classes = [_LoginThrottle]
 
