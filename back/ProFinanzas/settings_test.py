@@ -20,3 +20,6 @@ DATABASES = {
         'NAME': ':memory:',
     }
 }
+
+# Tests make requests against 'testserver' (Django's default test host).
+ALLOWED_HOSTS = ['*']
