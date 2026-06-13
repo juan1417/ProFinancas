@@ -149,10 +149,10 @@ class TransactionListSerializer(serializers.ModelSerializer):
     Incluye menos campos para mejorar el rendimiento en listados grandes.
     """
     category_name = serializers.CharField(source='category.name', read_only=True)
-    
+
     class Meta:
         model = Transaction
         fields = [
-            'id', 'type', 'amount', 'description', 
+            'id', 'category', 'type', 'amount', 'description',
             'category_name', 'transaction_date'
         ]
