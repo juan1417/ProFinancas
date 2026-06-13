@@ -378,6 +378,10 @@ class TestTransactionAPI(APITestCase):
         self.assertEqual(response.data['total_expenses'], 1000.0)
         self.assertEqual(response.data['balance'], 2000.0)
         self.assertEqual(response.data['transaction_count'], 2)
+        # /summary/ also includes a per-category breakdown so the
+        # dashboard's pie/bar charts have data without a second request.
+        self.assertIn('by_category', response.data)
+        self.assertEqual(len(response.data['by_category']), 2)
     
     def test_transactions_by_category_endpoint(self):
         """Test: Endpoint de transacciones agrupadas por categoría"""

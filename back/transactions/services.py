@@ -30,28 +30,43 @@ class TransactionService:
         Returns a financial summary dict for the given queryset and time range.
         """
         if start_date and end_date:
-            queryset = queryset.filter(
+            scoped = queryset.filter(
                 transaction_date__gte=start_date,
                 transaction_date__lte=end_date,
             )
         else:
             periods = {'week': 7, 'year': 365}
             days = periods.get(period, 30)
-            queryset = queryset.filter(
+            scoped = queryset.filter(
                 transaction_date__gte=timezone.now() - timedelta(days=days)
             )
 
-        income_total = queryset.filter(type='INCOME').aggregate(total=Sum('amount'))['total'] or 0
-        expense_total = queryset.filter(type='EXPENSE').aggregate(total=Sum('amount'))['total'] or 0
+        income_total = scoped.filter(type='INCOME').aggregate(total=Sum('amount'))['total'] or 0
+        expense_total = scoped.filter(type='EXPENSE').aggregate(total=Sum('amount'))['total'] or 0
+
+        # Per-category breakdown for the same time window so the
+        # dashboard's pie chart and bar chart have data without
+        # having to make a second request to /by_category/.
+        by_category = list(
+            scoped.values(
+                'category__id', 'category__name', 'category__type',
+            )
+            .annotate(
+                total_amount=Sum('amount'),
+                transaction_count=Count('id'),
+            )
+            .order_by('-total_amount')
+        )
 
         return {
             'period': period,
             'total_income': float(income_total),
             'total_expenses': float(expense_total),
             'balance': float(income_total - expense_total),
-            'transaction_count': queryset.count(),
-            'income_count': queryset.filter(type='INCOME').count(),
-            'expense_count': queryset.filter(type='EXPENSE').count(),
+            'transaction_count': scoped.count(),
+            'income_count': scoped.filter(type='INCOME').count(),
+            'expense_count': scoped.filter(type='EXPENSE').count(),
+            'by_category': by_category,
         }
 
     @staticmethod
