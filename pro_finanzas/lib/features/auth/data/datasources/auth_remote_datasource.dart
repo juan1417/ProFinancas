@@ -97,11 +97,13 @@ class AuthRemoteDatasource {
   ({UserModel user, String accessToken, String refreshToken}) _parseAuthResponse(
     Map<String, dynamic> data,
   ) {
-    final tokens = data['tokens'] as Map<String, dynamic>;
+    // Both endpoints return the same canonical shape:
+    //   { user: {...}, access: str, refresh: str }
+    final userJson = data['user'] as Map<String, dynamic>;
     return (
-      user: UserModel.fromJson(data['user'] as Map<String, dynamic>),
-      accessToken: tokens['access'] as String,
-      refreshToken: tokens['refresh'] as String,
+      user: UserModel.fromJson(userJson),
+      accessToken: data['access'] as String,
+      refreshToken: data['refresh'] as String,
     );
   }
 

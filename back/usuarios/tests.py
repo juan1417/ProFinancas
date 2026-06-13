@@ -53,9 +53,8 @@ class RegisterViewTest(TestCase):
     def test_registro_exitoso_devuelve_201_y_tokens(self):
         res = self.client.post(REGISTER_URL, self.payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertIn('tokens', res.data)
-        self.assertIn('access', res.data['tokens'])
-        self.assertIn('refresh', res.data['tokens'])
+        self.assertIn('access', res.data)
+        self.assertIn('refresh', res.data)
         self.assertIn('user', res.data)
 
     def test_registro_passwords_no_coinciden_devuelve_400(self):
@@ -90,6 +89,8 @@ class LoginViewTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('access', res.data)
         self.assertIn('refresh', res.data)
+        self.assertIn('user', res.data)
+        self.assertEqual(res.data['user']['email'], 'login@profinanzas.com')
 
     def test_login_password_incorrecta_devuelve_401(self):
         res = self.client.post(LOGIN_URL, {

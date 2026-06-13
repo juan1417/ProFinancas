@@ -40,11 +40,26 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(TokenObtainPairView):
     """
     POST /api/auth/login/
-    Autenticación con email y contraseña. Devuelve par de tokens JWT.
+    Autenticación con email y contraseña. Devuelve par de tokens JWT
+    y el perfil del usuario.
+
+    El response tiene la misma forma que /auth/register/:
+      { user: {...}, access: str, refresh: str }
+    para que el cliente Flutter pueda parsear ambos endpoints
+    con un solo decoder.
     """
     serializer_class = EmailTokenObtainPairSerializer
     permission_classes = [permissions.AllowAny]
     throttle_classes = [_LoginThrottle]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({
+            'user': UserProfileSerializer(serializer.user).data,
+            'access': serializer.validated_data['access'],
+            'refresh': serializer.validated_data['refresh'],
+        }, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
