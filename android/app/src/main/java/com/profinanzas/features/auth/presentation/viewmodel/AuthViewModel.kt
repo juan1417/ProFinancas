@@ -1,0 +1,105 @@
+package com.profinanzas.features.auth.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.profinanzas.core.domain.model.User
+import com.profinanzas.core.domain.repository.AuthResult
+import com.profinanzas.core.domain.usecase.auth.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class AuthUiState(
+    val user: User? = null,
+    val isAuthenticated: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val successMessage: String? = null,
+)
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
+    private val registerUseCase: RegisterUseCase,
+    private val logoutUseCase: LogoutUseCase,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(AuthUiState())
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    init {
+        tryRestoreSession()
+    }
+
+    private fun tryRestoreSession() {
+        viewModelScope.launch {
+            // TODO: implement token restore from EncryptedSharedPreferences
+        }
+    }
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            loginUseCase(email, password)
+                .onSuccess { result ->
+                    _uiState.value = _uiState.value.copy(
+                        user = result.user,
+                        isAuthenticated = true,
+                        isLoading = false,
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al iniciar sesión",
+                    )
+                }
+        }
+    }
+
+    fun register(email: String, username: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            registerUseCase(email, username, password)
+                .onSuccess { result ->
+                    _uiState.value = _uiState.value.copy(
+                        user = result.user,
+                        isAuthenticated = true,
+                        isLoading = false,
+                        successMessage = "Registro exitoso",
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al registrar",
+                    )
+                }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            // TODO: pass refresh token from storage
+            logoutUseCase("")
+                .onSuccess {
+                    _uiState.value = AuthUiState()
+                }
+                .onFailure {
+                    _uiState.value = AuthUiState()
+                }
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearSuccess() {
+        _uiState.value = _uiState.value.copy(successMessage = null)
+    }
+}

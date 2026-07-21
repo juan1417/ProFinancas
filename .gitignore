@@ -10,28 +10,20 @@ __pycache__/
 db.sqlite3
 migrations/
 
-# ─── Flutter / Dart ────────────────────────────────────────────────────────────
-pro_finanzas/.dart_tool/
-pro_finanzas/.flutter-plugins
-pro_finanzas/.flutter-plugins-dependencies
-pro_finanzas/.packages
-pro_finanzas/build/
-pro_finanzas/.idea/
-pro_finanzas/.vscode/
-pro_finanzas/android/.gradle/
-pro_financas/android/app/build/
-pro_finanzas/android/build/
-pro_finanzas/ios/Pods/
-pro_finanzas/ios/.symlinks/
-pro_finanzas/ios/Flutter/Flutter.framework
-pro_finanzas/ios/Flutter/Flutter.podspec
-pro_finanzas/macos/Pods/
-pro_finanzas/macos/Flutter/ephemeral/
-pro_finanzas/linux/flutter/ephemeral/
-pro_finanzas/windows/flutter/ephemeral/
-pro_finanzas/.flutter-plugins
-pro_finanzas/.flutter-plugins-dependencies
-*.iml
+# ─── Kotlin / Android ─────────────────────────────────────────────────────────
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/*.apk
+android/*.aab
+android/*.keystore
+android/*.jks
+
+# ─── Kotlin / Desktop ────────────────────────────────────────────────────────
+desktop/build/
+desktop/.gradle/
+desktop/out/
 
 # ─── OS junk ───────────────────────────────────────────────────────────────────
 .DS_Store
@@ -41,5 +33,12 @@ desktop.ini
 # ─── IDE ───────────────────────────────────────────────────────────────────────
 .idea/
 .vscode/
+*.iml
 *.swp
 *.swo
+
+# ─── Build artifacts (root level) ─────────────────────────────────────────────
+build/
+gen/
+out/
+local.properties

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django_filters',
     'usuarios',
     'transactions',
+    'budgets',
 
 ]
 
@@ -68,7 +69,6 @@ WSGI_APPLICATION = 'ProFinanzas.wsgi.application'
 # En entorno de tests se usa SQLite en memoria para velocidad (TDD)
 TESTING = os.getenv('DJANGO_TESTING', 'False') == 'True'
 
-
 if TESTING:
     DATABASES = {
         'default': {
@@ -77,20 +77,39 @@ if TESTING:
         }
     }
 else:
+    # Prioridad: URLDB (URI completa) > variables individuales DB_*
+    url_db = os.getenv('URLDB')
 
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'postgres'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '6543'),
-            'OPTIONS': {
-                'sslmode': 'require',
+    if url_db:
+        from urllib.parse import urlparse
+        parsed = urlparse(url_db)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed.path.lstrip('/').split('?')[0],
+                'USER': parsed.username,
+                'PASSWORD': parsed.password,
+                'HOST': parsed.hostname,
+                'PORT': parsed.port or 5432,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
             }
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.getenv('DB_NAME', 'postgres'),
+                'USER': os.getenv('DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('DB_PASSWORD'),
+                'HOST': os.getenv('DB_HOST', 'localhost'),
+                'PORT': os.getenv('DB_PORT', '5432'),
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
+            }
+        }
 
 
 
