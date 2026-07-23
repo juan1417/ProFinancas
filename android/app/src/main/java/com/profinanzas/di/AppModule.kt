@@ -27,4 +27,8 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindInvoiceRepository(impl: InvoiceRepositoryImpl): InvoiceRepository
 }

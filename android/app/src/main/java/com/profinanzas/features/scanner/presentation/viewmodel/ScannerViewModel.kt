@@ -73,7 +73,8 @@ class ScannerViewModel @Inject constructor(
     fun saveAsExpense(categoryId: Int, amount: Double) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true)
-            val now = java.time.LocalDateTime.now().toString()
+            val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Bogota"))
+                .format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
             createTransaction(
                 categoryId = categoryId,
                 type = "EXPENSE",

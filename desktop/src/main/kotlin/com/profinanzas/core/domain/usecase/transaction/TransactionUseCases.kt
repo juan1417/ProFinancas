@@ -24,3 +24,7 @@ class CreateTransactionUseCase(private val repository: TransactionRepository) {
 class GetSummaryUseCase(private val repository: TransactionRepository) {
     suspend operator fun invoke(period: String = "month") = repository.getSummary(period)
 }
+
+class DeleteTransactionUseCase(private val repository: TransactionRepository) {
+    suspend operator fun invoke(id: Int) = repository.delete(id)
+}

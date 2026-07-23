@@ -12,10 +12,14 @@ import com.profinanzas.features.auth.AuthViewModel
 import com.profinanzas.features.auth.LoginScreen
 import com.profinanzas.features.auth.RegisterScreen
 import com.profinanzas.features.auth.ProfileScreen
+import com.profinanzas.features.categories.CategoriesScreen
+import com.profinanzas.features.categories.CategoriesViewModel
 import com.profinanzas.features.dashboard.DashboardViewModel
 import com.profinanzas.features.dashboard.DashboardScreen
 import com.profinanzas.features.facturas.FacturasViewModel
 import com.profinanzas.features.facturas.FacturasScreen
+import com.profinanzas.features.transactions.TransactionsScreen
+import com.profinanzas.features.transactions.TransactionsViewModel
 import com.profinanzas.features.wallet.WalletViewModel
 import com.profinanzas.features.wallet.WalletScreen
 
@@ -57,13 +61,17 @@ private fun MainDesktopShell(
     var showProfile by remember { mutableStateOf(false) }
 
     val dashboardViewModel = remember { DashboardViewModel() }
+    val transactionsViewModel = remember { TransactionsViewModel() }
     val facturasViewModel = remember { FacturasViewModel() }
     val walletViewModel = remember { WalletViewModel() }
+    val categoriesViewModel = remember { CategoriesViewModel() }
 
     val sidebarItems = listOf(
         SidebarItem("Dashboard", Icons.Default.Dashboard, Screen.Dashboard.route),
-        SidebarItem("Transacciones", Icons.Default.TableChart, Screen.Facturas.route),
+        SidebarItem("Transacciones", Icons.Default.SwapHoriz, Screen.Transactions.route),
         SidebarItem("Facturas", Icons.Default.Receipt, Screen.Facturas.route),
+        SidebarItem("Categorías", Icons.Default.Category, Screen.Categories.route),
+        SidebarItem("Tarjetas", Icons.Default.CreditCard, Screen.Wallet.route),
     )
 
     val sidebarUser = SidebarUser(
@@ -104,7 +112,9 @@ private fun MainDesktopShell(
 
                 when (selectedRoute) {
                     Screen.Dashboard.route -> DashboardScreen(dashboardViewModel)
+                    Screen.Transactions.route -> TransactionsScreen(transactionsViewModel)
                     Screen.Facturas.route -> FacturasScreen(facturasViewModel)
+                    Screen.Categories.route -> CategoriesScreen(categoriesViewModel)
                     Screen.Wallet.route -> WalletScreen(walletViewModel)
                     else -> DashboardScreen(dashboardViewModel)
                 }

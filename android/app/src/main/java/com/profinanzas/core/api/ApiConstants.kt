@@ -23,4 +23,7 @@ object ApiConstants {
 
     // Budgets
     const val BUDGETS = "budgets/"
+
+    // Invoices
+    const val INVOICES = "invoices/"
 }

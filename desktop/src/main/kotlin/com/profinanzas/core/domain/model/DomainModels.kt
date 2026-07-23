@@ -69,3 +69,20 @@ data class Budget(
     val remaining: Double get() = amount - spent
     val percentage: Double get() = if (amount > 0) (spent / amount * 100) else 0.0
 }
+
+data class Invoice(
+    val id: String,
+    val invoiceNumber: String,
+    val provider: String,
+    val amount: Double,
+    val status: String,
+    val category: String,
+    val dueDate: String,
+    val registeredDate: String,
+    val paidDate: String? = null,
+    val notes: String = "",
+) {
+    val isPaid get() = status == "PAID"
+    val isPending get() = status == "PENDING"
+    val isOverdue get() = status == "OVERDUE"
+}

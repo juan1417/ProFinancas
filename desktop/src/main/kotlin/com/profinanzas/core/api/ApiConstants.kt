@@ -19,4 +19,6 @@ object ApiConstants {
     const val TRANSACTIONS_BY_CATEGORY = "transactions/by_category/"
 
     const val BUDGETS = "budgets/"
+
+    const val INVOICES = "invoices/"
 }

@@ -11,10 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.ui.formatMonthYear
 import com.profinanzas.core.ui.theme.*
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun DesktopTopBar(
@@ -23,9 +21,7 @@ fun DesktopTopBar(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val monthYear = LocalDate.now().format(
-        DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "CO"))
-    )
+    val monthYear = formatMonthYear()
 
     Row(
         modifier = modifier
@@ -48,7 +44,7 @@ fun DesktopTopBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = monthYear.replaceFirstChar { it.uppercase() },
+                text = monthYear,
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )

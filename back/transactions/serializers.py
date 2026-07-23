@@ -25,6 +25,8 @@ class CategorySerializer(serializers.ModelSerializer):
     
     def get_transactions_count(self, obj):
         """Retorna el número de transacciones asociadas a esta categoría"""
+        if hasattr(obj, 'tx_count'):
+            return obj.tx_count
         return obj.transactions.count()
     
     def validate_name(self, value):

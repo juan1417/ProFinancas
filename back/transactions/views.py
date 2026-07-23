@@ -1,6 +1,7 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Category, Transaction
@@ -32,7 +33,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     ordering = ['type', 'name']
 
     def get_queryset(self):
-        return Category.objects.filter(user=self.request.user)
+        return Category.objects.filter(
+            user=self.request.user
+        ).annotate(tx_count=Count('transactions'))
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

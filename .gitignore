@@ -9,6 +9,7 @@ __pycache__/
 *.db
 db.sqlite3
 migrations/
+logs/
 
 # ─── Kotlin / Android ─────────────────────────────────────────────────────────
 android/app/build/
@@ -42,3 +43,4 @@ build/
 gen/
 out/
 local.properties
+.gradle/

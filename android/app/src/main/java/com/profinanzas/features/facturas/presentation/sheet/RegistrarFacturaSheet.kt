@@ -17,8 +17,14 @@ import com.profinanzas.core.ui.theme.*
 fun RegistrarFacturaSheet(
     onDismiss: () -> Unit,
     onScan: () -> Unit,
-    onSave: () -> Unit,
+    onSave: (provider: String, amount: Double, dueDate: String, category: String, notes: String) -> Unit,
 ) {
+    var provider by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var dueDate by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Surface,
@@ -41,10 +47,9 @@ fun RegistrarFacturaSheet(
         ) {
             Text("Registrar factura", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
 
-            // Proveedor
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = provider,
+                onValueChange = { provider = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Proveedor") },
                 placeholder = { Text("Nombre del proveedor") },
@@ -58,11 +63,10 @@ fun RegistrarFacturaSheet(
                 singleLine = true,
             )
 
-            // Monto
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = amount,
+                    onValueChange = { amount = it },
                     modifier = Modifier.weight(1f),
                     label = { Text("Monto") },
                     placeholder = { Text("0.00") },
@@ -76,27 +80,31 @@ fun RegistrarFacturaSheet(
                     singleLine = true,
                 )
                 OutlinedTextField(
-                    value = "$ USD",
+                    value = "$ COP",
                     onValueChange = {},
                     modifier = Modifier.width(120.dp),
                     label = { Text("Moneda") },
+                    enabled = false,
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Border,
                         focusedBorderColor = Accent,
                         cursorColor = Accent,
                         unfocusedContainerColor = Surface,
                         focusedContainerColor = Surface,
+                        disabledTextColor = Fg,
+                        disabledBorderColor = Border,
+                        disabledLabelColor = Muted,
                     ),
                     singleLine = true,
                 )
             }
 
-            // Fecha
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = dueDate,
+                onValueChange = { dueDate = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Fecha de vencimiento") },
+                placeholder = { Text("YYYY-MM-DD") },
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Border,
                     focusedBorderColor = Accent,
@@ -107,13 +115,12 @@ fun RegistrarFacturaSheet(
                 singleLine = true,
             )
 
-            // Categoría
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = category,
+                onValueChange = { category = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Categoría") },
-                placeholder = { Text("Seleccionar") },
+                placeholder = { Text("Ej: Servicios, Alimentación") },
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Border,
                     focusedBorderColor = Accent,
@@ -124,10 +131,9 @@ fun RegistrarFacturaSheet(
                 singleLine = true,
             )
 
-            // Notas
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = notes,
+                onValueChange = { notes = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Notas") },
                 placeholder = { Text("Detalles adicionales...") },
@@ -141,7 +147,6 @@ fun RegistrarFacturaSheet(
                 maxLines = 2,
             )
 
-            // Buttons
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = onScan,
@@ -154,9 +159,13 @@ fun RegistrarFacturaSheet(
                     Text("Escanear")
                 }
                 Button(
-                    onClick = onSave,
+                    onClick = {
+                        val parsedAmount = amount.toDoubleOrNull() ?: 0.0
+                        onSave(provider, parsedAmount, dueDate, category, notes)
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    enabled = provider.isNotBlank() && amount.toDoubleOrNull() != null,
                 ) {
                     Text("Guardar")
                 }

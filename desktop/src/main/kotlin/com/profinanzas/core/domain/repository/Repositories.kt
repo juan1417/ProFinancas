@@ -1,5 +1,6 @@
 package com.profinanzas.core.domain.repository
 
+import com.profinanzas.core.data.model.InvoiceCreateRequest
 import com.profinanzas.core.domain.model.*
 
 interface AuthRepository {
@@ -64,4 +65,12 @@ interface BudgetRepository {
         endDate: String,
     ): Result<Budget>
     suspend fun delete(id: Int): Result<Unit>
+}
+
+interface InvoiceRepository {
+    suspend fun list(): Result<List<Invoice>>
+    suspend fun get(id: String): Result<Invoice>
+    suspend fun create(data: InvoiceCreateRequest): Result<Invoice>
+    suspend fun update(id: String, data: InvoiceCreateRequest): Result<Invoice>
+    suspend fun delete(id: String): Result<Unit>
 }

@@ -11,6 +11,9 @@ class AuthInterceptor @Inject constructor() : Interceptor {
     @Volatile
     var accessToken: String? = null
 
+    @Volatile
+    var refreshToken: String? = null
+
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
         accessToken?.let { token ->

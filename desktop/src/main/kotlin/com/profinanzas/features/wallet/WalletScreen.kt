@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,16 +36,24 @@ fun WalletScreen(viewModel: WalletViewModel) {
             )
         }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                uiState.cards.forEach { card ->
-                    FinancialCard(
-                        card = card,
-                        modifier = Modifier.weight(1f),
-                    )
+        if (uiState.cards.isEmpty()) {
+            item {
+                AppCard {
+                    Text("No tienes tarjetas guardadas", color = Muted)
+                }
+            }
+        } else {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    uiState.cards.forEach { card ->
+                        FinancialCard(
+                            card = card,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -56,10 +63,17 @@ fun WalletScreen(viewModel: WalletViewModel) {
             AppCard {
                 Text("Presupuestos", style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(16.dp))
-                BudgetProgressBar("Alimentación", 320000.0, 450000.0)
-                BudgetProgressBar("Transporte", 145000.0, 180000.0)
-                BudgetProgressBar("Servicios", 248000.0, 250000.0)
-                BudgetProgressBar("Entretenimiento", 89000.0, 120000.0)
+                if (uiState.budgets.isEmpty()) {
+                    Text("No hay presupuestos activos", color = Muted)
+                } else {
+                    uiState.budgets.forEach { budget ->
+                        BudgetProgressBar(
+                            name = budget.categoryName ?: "General",
+                            spent = budget.spent,
+                            total = budget.amount,
+                        )
+                    }
+                }
             }
         }
     }

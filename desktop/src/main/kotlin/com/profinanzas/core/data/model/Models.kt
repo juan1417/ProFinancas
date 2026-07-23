@@ -103,3 +103,30 @@ data class BudgetCreateRequest(
     @SerializedName("start_date") val startDate: String,
     @SerializedName("end_date") val endDate: String,
 )
+
+data class InvoiceDto(
+    val id: String,
+    @SerializedName("invoice_number") val invoiceNumber: String,
+    val user: String,
+    val provider: String,
+    val amount: Double,
+    val status: String,
+    val category: String,
+    @SerializedName("due_date") val dueDate: String,
+    @SerializedName("registered_date") val registeredDate: String,
+    @SerializedName("paid_date") val paidDate: String? = null,
+    val notes: String,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("updated_at") val updatedAt: String? = null,
+)
+
+data class InvoiceCreateRequest(
+    val provider: String,
+    val amount: Double,
+    val status: String,
+    val category: String,
+    @SerializedName("due_date") val dueDate: String,
+    @SerializedName("registered_date") val registeredDate: String,
+    @SerializedName("paid_date") val paidDate: String? = null,
+    val notes: String = "",
+)

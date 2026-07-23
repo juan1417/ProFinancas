@@ -1,42 +1,54 @@
 package com.profinanzas.features.facturas.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.profinanzas.core.domain.model.Invoice
+import com.profinanzas.core.domain.usecase.invoice.CreateInvoiceUseCase
+import com.profinanzas.core.domain.usecase.invoice.DeleteInvoiceUseCase
+import com.profinanzas.core.domain.usecase.invoice.ListInvoicesUseCase
+import com.profinanzas.core.domain.usecase.invoice.UpdateInvoiceUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class Invoice(
-    val id: String,
-    val provider: String,
-    val amount: Double,
-    val status: String, // "paid", "pending", "overdue"
-    val dueDate: String = "",
-    val category: String = "",
-    val notes: String = "",
-    val registeredDate: String = "",
-    val paidDate: String? = null,
-)
-
 data class FacturasUiState(
-    val invoices: List<Invoice> = listOf(
-        Invoice("FAC-001", "TEPCO Electricidad", 6420.0, "paid", "15 Jul 2026", "Servicios", registeredDate = "01 Jul 2026", paidDate = "14 Jul 2026"),
-        Invoice("FAC-002", "NTT DoCoMo", 4500.0, "pending", "20 Jul 2026", "Servicios", registeredDate = "05 Jul 2026"),
-        Invoice("FAC-003", "Tokyo Gas", 3280.0, "paid", "10 Jul 2026", "Servicios", registeredDate = "01 Jul 2026", paidDate = "09 Jul 2026"),
-        Invoice("FAC-004", "Seguro Residencial", 8900.0, "overdue", "05 Jul 2026", "Salud", notes = "Se presentó reclamo el 12/07.", registeredDate = "01 Jun 2026"),
-        Invoice("FAC-005", "Internet Yozumi", 5200.0, "pending", "25 Jul 2026", "Servicios", registeredDate = "10 Jul 2026"),
-        Invoice("FAC-006", "Agua Municipal", 2100.0, "paid", "08 Jul 2026", "Servicios", registeredDate = "01 Jul 2026", paidDate = "07 Jul 2026"),
-    ),
+    val invoices: List<Invoice> = emptyList(),
     val selectedFilter: String = "Todas",
     val searchQuery: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null,
 )
 
 @HiltViewModel
-class FacturasViewModel @Inject constructor() : ViewModel() {
+class FacturasViewModel @Inject constructor(
+    private val listInvoicesUseCase: ListInvoicesUseCase,
+    private val createInvoiceUseCase: CreateInvoiceUseCase,
+    private val updateInvoiceUseCase: UpdateInvoiceUseCase,
+    private val deleteInvoiceUseCase: DeleteInvoiceUseCase,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacturasUiState())
     val uiState: StateFlow<FacturasUiState> = _uiState.asStateFlow()
+
+    init {
+        loadInvoices()
+    }
+
+    fun loadInvoices() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            listInvoicesUseCase()
+                .onSuccess { invoices ->
+                    _uiState.value = _uiState.value.copy(invoices = invoices, isLoading = false)
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
+                }
+        }
+    }
 
     fun setFilter(filter: String) {
         _uiState.value = _uiState.value.copy(selectedFilter = filter)
@@ -50,13 +62,59 @@ class FacturasViewModel @Inject constructor() : ViewModel() {
         val state = _uiState.value
         return state.invoices.filter { invoice ->
             val matchesFilter = state.selectedFilter == "Todas" ||
-                    (state.selectedFilter == "Pendientes" && invoice.status == "pending") ||
-                    (state.selectedFilter == "Pagadas" && invoice.status == "paid") ||
-                    (state.selectedFilter == "Vencidas" && invoice.status == "overdue")
+                    (state.selectedFilter == "Pendientes" && invoice.status == "PENDING") ||
+                    (state.selectedFilter == "Pagadas" && invoice.status == "PAID") ||
+                    (state.selectedFilter == "Vencidas" && invoice.status == "OVERDUE")
             val matchesSearch = state.searchQuery.isEmpty() ||
                     invoice.provider.contains(state.searchQuery, ignoreCase = true) ||
-                    invoice.id.contains(state.searchQuery, ignoreCase = true)
+                    invoice.invoiceNumber.contains(state.searchQuery, ignoreCase = true)
             matchesFilter && matchesSearch
+        }
+    }
+
+    fun createInvoice(
+        provider: String,
+        amount: Double,
+        status: String,
+        category: String,
+        dueDate: String,
+        registeredDate: String,
+        paidDate: String?,
+        notes: String,
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            createInvoiceUseCase(provider, amount, status, category, dueDate, registeredDate, paidDate, notes)
+                .onSuccess { loadInvoices() }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message, isLoading = false) }
+        }
+    }
+
+    fun updateInvoice(
+        id: String,
+        provider: String,
+        amount: Double,
+        status: String,
+        category: String,
+        dueDate: String,
+        registeredDate: String,
+        paidDate: String?,
+        notes: String,
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            updateInvoiceUseCase(id, provider, amount, status, category, dueDate, registeredDate, paidDate, notes)
+                .onSuccess { loadInvoices() }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message, isLoading = false) }
+        }
+    }
+
+    fun deleteInvoice(id: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            deleteInvoiceUseCase(id)
+                .onSuccess { loadInvoices() }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message, isLoading = false) }
         }
     }
 }

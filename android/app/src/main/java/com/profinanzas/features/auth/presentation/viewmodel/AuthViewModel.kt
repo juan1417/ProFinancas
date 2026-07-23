@@ -2,6 +2,8 @@ package com.profinanzas.features.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.profinanzas.core.api.AuthInterceptor
+import com.profinanzas.core.data.local.TokenManager
 import com.profinanzas.core.domain.model.User
 import com.profinanzas.core.domain.repository.AuthResult
 import com.profinanzas.core.domain.usecase.auth.*
@@ -25,6 +27,8 @@ class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
     private val logoutUseCase: LogoutUseCase,
+    private val tokenManager: TokenManager,
+    private val authInterceptor: AuthInterceptor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -36,7 +40,21 @@ class AuthViewModel @Inject constructor(
 
     private fun tryRestoreSession() {
         viewModelScope.launch {
-            // TODO: implement token restore from EncryptedSharedPreferences
+            if (tokenManager.isLoggedIn) {
+                authInterceptor.accessToken = tokenManager.accessToken
+                authInterceptor.refreshToken = tokenManager.refreshToken
+                val user = User(
+                    id = tokenManager.userId ?: "",
+                    email = tokenManager.userEmail ?: "",
+                    username = tokenManager.username ?: "",
+                    firstName = null,
+                    lastName = null,
+                )
+                _uiState.value = AuthUiState(
+                    user = user,
+                    isAuthenticated = true,
+                )
+            }
         }
     }
 
@@ -84,12 +102,13 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            // TODO: pass refresh token from storage
-            logoutUseCase("")
+            val refreshToken = tokenManager.refreshToken ?: ""
+            logoutUseCase(refreshToken)
                 .onSuccess {
                     _uiState.value = AuthUiState()
                 }
                 .onFailure {
+                    tokenManager.clear()
                     _uiState.value = AuthUiState()
                 }
         }

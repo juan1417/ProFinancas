@@ -1,5 +1,6 @@
 package com.profinanzas.features.facturas.presentation.sheet
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -17,8 +18,12 @@ fun ActualizarFacturaSheet(
     amount: String,
     notes: String,
     onDismiss: () -> Unit,
-    onSave: () -> Unit,
+    onSave: (provider: String, amount: String, notes: String) -> Unit,
 ) {
+    var editedProvider by remember { mutableStateOf(provider) }
+    var editedAmount by remember { mutableStateOf("") }
+    var editedNotes by remember { mutableStateOf(notes) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Surface,
@@ -29,6 +34,7 @@ fun ActualizarFacturaSheet(
                     .padding(top = 12.dp)
                     .width(40.dp)
                     .height(4.dp)
+                    .background(Border, RoundedCornerShape(2.dp))
             )
         },
     ) {
@@ -42,8 +48,8 @@ fun ActualizarFacturaSheet(
             Text("Actualizar $invoiceId", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
 
             OutlinedTextField(
-                value = provider,
-                onValueChange = {},
+                value = editedProvider,
+                onValueChange = { editedProvider = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Proveedor") },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -76,8 +82,8 @@ fun ActualizarFacturaSheet(
             )
 
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = editedAmount,
+                onValueChange = { editedAmount = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Monto actualizado") },
                 placeholder = { Text("Nuevo monto si aplica") },
@@ -92,8 +98,8 @@ fun ActualizarFacturaSheet(
             )
 
             OutlinedTextField(
-                value = notes,
-                onValueChange = {},
+                value = editedNotes,
+                onValueChange = { editedNotes = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Notas") },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -115,9 +121,10 @@ fun ActualizarFacturaSheet(
                     Text("Cancelar")
                 }
                 Button(
-                    onClick = onSave,
+                    onClick = { onSave(editedProvider, editedAmount.ifBlank { amount }, editedNotes) },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    enabled = editedProvider.isNotBlank(),
                 ) {
                     Text("Guardar")
                 }

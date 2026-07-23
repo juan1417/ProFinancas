@@ -1,8 +1,10 @@
+import logging
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .serializers import (
     EmailTokenObtainPairSerializer,
@@ -12,6 +14,8 @@ from .serializers import (
 )
 from .services import UserService
 
+logger = logging.getLogger('profinanzas.security')
+
 
 class _RegisterThrottle(AnonRateThrottle):
     scope = 'register'
@@ -19,6 +23,18 @@ class _RegisterThrottle(AnonRateThrottle):
 
 class _LoginThrottle(AnonRateThrottle):
     scope = 'login'
+
+
+class _TokenRefreshThrottle(AnonRateThrottle):
+    scope = 'refresh'
+
+
+class _ChangePasswordThrottle(UserRateThrottle):
+    scope = 'change_password'
+
+
+class _LogoutThrottle(UserRateThrottle):
+    scope = 'logout'
 
 
 class RegisterView(generics.CreateAPIView):
@@ -34,7 +50,17 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = UserService.register(serializer)
+        logger.info(
+            'REGISTER success email=%s ip=%s',
+            request.data.get('email', ''),
+            self._get_client_ip(request),
+        )
         return Response(data, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _get_client_ip(request):
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class LoginView(TokenObtainPairView):
@@ -54,12 +80,30 @@ class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            logger.warning(
+                'LOGIN failed email=%s ip=%s',
+                request.data.get('email', ''),
+                self._get_client_ip(request),
+            )
+            raise
+        logger.info(
+            'LOGIN success email=%s ip=%s',
+            serializer.user.email,
+            self._get_client_ip(request),
+        )
         return Response({
             'user': UserProfileSerializer(serializer.user).data,
             'access': serializer.validated_data['access'],
             'refresh': serializer.validated_data['refresh'],
         }, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _get_client_ip(request):
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class LogoutView(APIView):
@@ -68,13 +112,24 @@ class LogoutView(APIView):
     Invalida el refresh token (blacklist). Requiere autenticación.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [_LogoutThrottle]
 
     def post(self, request):
         try:
             UserService.logout(request.data.get('refresh'))
+            logger.info(
+                'LOGOUT user=%s ip=%s',
+                request.user.email,
+                self._get_client_ip(request),
+            )
             return Response({'detail': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @staticmethod
+    def _get_client_ip(request):
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
@@ -96,6 +151,7 @@ class ChangePasswordView(generics.UpdateAPIView):
     """
     serializer_class = ChangePasswordSerializer
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [_ChangePasswordThrottle]
 
     def get_object(self):
         return self.request.user
@@ -104,4 +160,22 @@ class ChangePasswordView(generics.UpdateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        logger.info(
+            'CHANGE_PASSWORD user=%s ip=%s',
+            request.user.email,
+            self._get_client_ip(request),
+        )
         return Response({'detail': 'Contraseña actualizada correctamente.'}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _get_client_ip(request):
+        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
+
+
+class ThrottledTokenRefreshView(TokenRefreshView):
+    """
+    POST /api/auth/token/refresh/
+    Renueva el access token. Throttled para prevenir abuso.
+    """
+    throttle_classes = [_TokenRefreshThrottle]

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,13 +20,20 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.domain.model.CategoryBreakdown
+import com.profinanzas.core.domain.model.Transaction
+import com.profinanzas.core.ui.formatRelativeDate
+import com.profinanzas.core.ui.formatMonthYear
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
-private val categoryColors = listOf(CatFood, CatTransport, CatServices, CatShopping, CatHealth)
-private val categoryNames = listOf("Alimentación", "Transporte", "Servicios", "Compras", "Salud")
-private val categoryPercentages = listOf(35, 25, 20, 12, 8)
+private val categoryColors = listOf(CatFood, CatTransport, CatServices, CatShopping, CatHealth, Accent, Warning, Danger)
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel) {
@@ -36,6 +42,10 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
     val income = summary?.totalIncome ?: 0.0
     val expenses = summary?.totalExpenses ?: 0.0
     val balance = summary?.balance ?: 0.0
+    val recentTransactions = uiState.recentTransactions
+    val budgets = uiState.budgets
+    val monthYear = formatMonthYear()
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
     LazyColumn(
         modifier = Modifier
@@ -51,10 +61,10 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                StatCard("Ingresos", "+$ ${String.format("%,.0f", income)}", Accent, "+12.5% vs mes anterior", Modifier.weight(1f))
-                StatCard("Gastos", "-$ ${String.format("%,.0f", expenses)}", Danger, "+8.3% vs mes anterior", Modifier.weight(1f))
-                StatCard("Balance", "$ ${String.format("%,.0f", balance)}", Warning, "Saludable", Modifier.weight(1f))
-                StatCard("Facturas pendientes", "4", Warning, "\$ 284.67 por pagar", Modifier.weight(1f))
+                StatCard("Ingresos", "+$ ${String.format("%,.0f", income)}", Accent, monthYear, Modifier.weight(1f))
+                StatCard("Gastos", "-$ ${String.format("%,.0f", expenses)}", Danger, monthYear, Modifier.weight(1f))
+                StatCard("Balance", "$ ${String.format("%,.0f", balance)}", if (balance >= 0) Accent else Danger, "Disponible", Modifier.weight(1f))
+                StatCard("Transacciones", "${summary?.transactionCount ?: 0}", Warning, monthYear, Modifier.weight(1f))
             }
         }
 
@@ -64,13 +74,13 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Bar Chart
+                // Bar Chart - uses real transactions
                 Box(modifier = Modifier.weight(2f)) {
-                    WeeklyBarChart()
+                    WeeklyBarChart(recentTransactions)
                 }
-                // Donut
+                // Donut - uses real byCategory
                 Box(modifier = Modifier.weight(1f)) {
-                    DonutChart()
+                    DonutChart(summary?.byCategory ?: emptyList(), expenses)
                 }
             }
         }
@@ -86,11 +96,33 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                     AppCard {
                         Text("TRANSACCIONES RECIENTES", style = MaterialTheme.typography.labelSmall, color = Muted)
                         Spacer(modifier = Modifier.height(16.dp))
-                        RecentTransactionItem("Ramen Ichiran", "Hoy, 12:30", -2850.0, CatFood, Icons.Default.Restaurant)
-                        RecentTransactionItem("Metro Tokyo", "Hoy, 08:15", -320.0, CatTransport, Icons.Default.Train)
-                        RecentTransactionItem("Depósito freelance", "Ayer, 16:45", 12000.0, Accent, Icons.Default.AccountBalance)
-                        RecentTransactionItem("Electricidad TEPCO", "Ayer, 09:00", -6420.0, CatServices, Icons.Default.Bolt)
-                        RecentTransactionItem("Don Quijote", "Lun, 19:20", -3150.0, CatShopping, Icons.Default.ShoppingBag)
+                        if (recentTransactions.isEmpty()) {
+                            Text("Sin transacciones recientes", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        } else {
+                            recentTransactions.forEach { tx ->
+                                val icon = when {
+                                    tx.isIncome -> Icons.Default.AccountBalance
+                                    tx.categoryName?.contains("Alimentación", true) == true -> Icons.Default.Restaurant
+                                    tx.categoryName?.contains("Transporte", true) == true -> Icons.Default.Train
+                                    tx.categoryName?.contains("Servicio", true) == true -> Icons.Default.Bolt
+                                    else -> Icons.Default.ShoppingBag
+                                }
+                                val color = when {
+                                    tx.isIncome -> Accent
+                                    tx.categoryName?.contains("Alimentación", true) == true -> CatFood
+                                    tx.categoryName?.contains("Transporte", true) == true -> CatTransport
+                                    tx.categoryName?.contains("Servicio", true) == true -> CatServices
+                                    else -> CatShopping
+                                }
+                                RecentTransactionItem(
+                                    tx.description,
+                                    formatRelativeDate(tx.transactionDate),
+                                    tx.signedAmount,
+                                    color,
+                                    icon,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -99,10 +131,17 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                     AppCard {
                         Text("Presupuestos", style = MaterialTheme.typography.headlineSmall)
                         Spacer(modifier = Modifier.height(16.dp))
-                        BudgetItem("Alimentación", 450000.0, 320000.0)
-                        BudgetItem("Transporte", 180000.0, 145000.0)
-                        BudgetItem("Servicios", 250000.0, 248000.0)
-                        BudgetItem("Entretenimiento", 120000.0, 89000.0)
+                        if (budgets.isEmpty()) {
+                            Text("Sin presupuestos activos", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        } else {
+                            budgets.take(4).forEach { budget ->
+                                BudgetItem(
+                                    budget.categoryName ?: "General",
+                                    budget.amount,
+                                    budget.spent,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -117,7 +156,15 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("Balance disponible", style = MaterialTheme.typography.bodySmall, color = Muted)
-                    StatusPill(text = "Saludable", color = Accent)
+                    val balanceColor = when {
+                        balance > 0 -> Accent
+                        balance < 0 -> Danger
+                        else -> Warning
+                    }
+                    StatusPill(
+                        text = if (balance > 0) "Saludable" else if (balance < 0) "Déficit" else "Neutro",
+                        color = balanceColor,
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -154,10 +201,31 @@ private fun StatCard(
 }
 
 @Composable
-private fun WeeklyBarChart() {
-    val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-    val values = listOf(2100.0, 3800.0, 1500.0, 4700.0, 2900.0, 5200.0, 1800.0)
-    val maxValue = values.max()
+private fun WeeklyBarChart(transactions: List<Transaction>) {
+    val today = LocalDate.now(ZoneId.of("America/Bogota"))
+    val dayOfWeek = today.dayOfWeek.value // 1=Monday..7=Sunday
+
+    // Build last 7 days labels
+    val days = (1..7).map { offset ->
+        val date = today.minusDays((7 - offset).toLong())
+        date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es", "CO"))
+    }
+
+    // Compute expenses per day from transactions
+    val dailyExpenses = mutableMapOf<Int, Double>()
+    transactions.filter { it.isExpense }.forEach { tx ->
+        try {
+            val txDate = LocalDate.parse(tx.transactionDate.substring(0, 10))
+            val daysAgo = java.time.temporal.ChronoUnit.DAYS.between(txDate, today)
+            if (daysAgo in 0..6) {
+                val idx = (daysAgo.toInt())
+                dailyExpenses[6 - idx] = (dailyExpenses[6 - idx] ?: 0.0) + tx.amount
+            }
+        } catch (_: Exception) { }
+    }
+
+    val values = (0..6).map { dailyExpenses[it] ?: 0.0 }
+    val maxValue = values.max().coerceAtLeast(1.0)
 
     AppCard {
         Row(
@@ -183,7 +251,7 @@ private fun WeeklyBarChart() {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "$${String.format("%.1f", values[index] / 1000)}k",
+                        text = if (values[index] > 0) "$${String.format("%.0f", values[index] / 1000)}k" else "$0",
                         style = MaterialTheme.typography.labelSmall,
                         color = Muted,
                     )
@@ -191,7 +259,7 @@ private fun WeeklyBarChart() {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height((values[index] / maxValue * 140).dp)
+                            .height(((if (maxValue > 0) values[index] / maxValue else 0.0) * 140).coerceAtLeast(2.0).dp)
                             .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
                             .background(AccentSoft)
                     )
@@ -204,86 +272,104 @@ private fun WeeklyBarChart() {
 }
 
 @Composable
-private fun DonutChart() {
+private fun DonutChart(byCategory: List<CategoryBreakdown>, totalExpenses: Double) {
+    val expenseCategories = byCategory.filter { it.categoryType == "EXPENSE" && it.totalAmount > 0 }
+    val total = expenseCategories.sumOf { it.totalAmount }.coerceAtLeast(1.0)
+
     AppCard {
         Text("Por categoría", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            Canvas(
+        if (expenseCategories.isEmpty()) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center,
             ) {
-                val strokeWidth = 24.dp.toPx()
-                val radius = (size.minDimension - strokeWidth) / 2
-                val center = Offset(size.width / 2f, size.height / 2f)
+                Text("Sin datos", color = Muted)
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                ) {
+                    val strokeWidth = 24.dp.toPx()
+                    val radius = (size.minDimension - strokeWidth) / 2
+                    val center = Offset(size.width / 2f, size.height / 2f)
 
-                drawCircle(
-                    color = Border,
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
-                )
-
-                var startAngle = -90f
-                categoryPercentages.forEach { pct ->
-                    val sweep = pct * 3.6f
-                    drawArc(
-                        color = categoryColors[categoryPercentages.indexOf(pct)],
-                        startAngle = startAngle,
-                        sweepAngle = sweep,
-                        useCenter = false,
+                    drawCircle(
+                        color = Border,
+                        radius = radius,
+                        center = center,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2, radius * 2),
                     )
-                    startAngle += sweep
+
+                    var startAngle = -90f
+                    expenseCategories.forEachIndexed { index, cat ->
+                        val pct = cat.totalAmount / total
+                        val sweep = (pct * 360).toFloat()
+                        val color = categoryColors.getOrElse(index) { Accent }
+                        drawArc(
+                            color = color,
+                            startAngle = startAngle,
+                            sweepAngle = sweep,
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
+                            topLeft = Offset(center.x - radius, center.y - radius),
+                            size = Size(radius * 2, radius * 2),
+                        )
+                        startAngle += sweep
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$${String.format("%.1f", total / 1000)}k",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text("Total", style = MaterialTheme.typography.labelSmall, color = Muted)
                 }
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$${String.format("%.1f", 32.1)}k",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text("Total", style = MaterialTheme.typography.labelSmall, color = Muted)
-            }
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        categoryNames.forEachIndexed { index, name ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            expenseCategories.forEachIndexed { index, cat ->
+                val pct = (cat.totalAmount / total * 100)
+                val color = categoryColors.getOrElse(index) { Accent }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(categoryColors[index]),
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(color),
+                        )
+                        Text(cat.categoryName ?: "Otros", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    }
+                    Text(
+                        "${String.format("%.1f", pct)}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
                     )
-                    Text(name, style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
-                Text(
-                    "${categoryPercentages[index]}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
-                )
             }
         }
     }

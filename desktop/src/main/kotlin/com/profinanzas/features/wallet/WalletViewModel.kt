@@ -1,5 +1,7 @@
 package com.profinanzas.features.wallet
 
+import com.profinanzas.core.domain.model.Budget
+import com.profinanzas.core.domain.usecase.budget.GetBudgetsUseCase
 import com.profinanzas.di.AppModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class WalletCard(
     val id: String,
@@ -18,18 +21,31 @@ data class WalletCard(
 )
 
 data class WalletUiState(
-    val cards: List<WalletCard> = listOf(
-        WalletCard("1", "Visa Platinum", "4521", "credit", 0xFF22C55E, 0xFF16A34A),
-        WalletCard("2", "Mastercard Gold", "8903", "debit", 0xFF2563EB, 0xFF1D4ED8),
-    ),
+    val cards: List<WalletCard> = emptyList(),
+    val budgets: List<Budget> = emptyList(),
     val selectedCardId: String? = null,
 )
 
-class WalletViewModel {
+class WalletViewModel(
+    private val getBudgets: GetBudgetsUseCase = AppModule.getBudgetsUseCase,
+) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _uiState = MutableStateFlow(WalletUiState())
     val uiState: StateFlow<WalletUiState> = _uiState.asStateFlow()
+
+    init {
+        loadBudgets()
+    }
+
+    private fun loadBudgets() {
+        scope.launch {
+            getBudgets()
+                .onSuccess { budgets ->
+                    _uiState.value = _uiState.value.copy(budgets = budgets)
+                }
+        }
+    }
 
     fun selectCard(id: String?) {
         _uiState.value = _uiState.value.copy(selectedCardId = id)

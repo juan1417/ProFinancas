@@ -21,7 +21,7 @@ interface ApiService {
     @PATCH(ApiConstants.PROFILE)
     suspend fun updateProfile(@Body body: Map<String, String>): Response<UserDto>
 
-    @POST(ApiConstants.CHANGE_PASSWORD)
+    @PUT(ApiConstants.CHANGE_PASSWORD)
     suspend fun changePassword(@Body body: Map<String, String>): Response<Unit>
 
     @POST(ApiConstants.TOKEN_REFRESH)
@@ -94,4 +94,22 @@ interface ApiService {
 
     @DELETE("${ApiConstants.BUDGETS}{id}/")
     suspend fun deleteBudget(@Path("id") id: Int): Response<Unit>
+
+    @GET(ApiConstants.INVOICES)
+    suspend fun getInvoices(): Response<List<InvoiceDto>>
+
+    @POST(ApiConstants.INVOICES)
+    suspend fun createInvoice(@Body body: InvoiceCreateRequest): Response<InvoiceDto>
+
+    @GET("${ApiConstants.INVOICES}{id}/")
+    suspend fun getInvoice(@Path("id") id: String): Response<InvoiceDto>
+
+    @PUT("${ApiConstants.INVOICES}{id}/")
+    suspend fun updateInvoice(
+        @Path("id") id: String,
+        @Body body: InvoiceCreateRequest,
+    ): Response<InvoiceDto>
+
+    @DELETE("${ApiConstants.INVOICES}{id}/")
+    suspend fun deleteInvoice(@Path("id") id: String): Response<Unit>
 }

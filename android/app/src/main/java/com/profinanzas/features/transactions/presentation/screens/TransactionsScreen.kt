@@ -112,8 +112,11 @@ fun TransactionsScreen(
     }
 
     if (showAddSheet) {
+        val categories by viewModel.categories.collectAsState()
         AddTransactionSheet(
+            categories = categories,
             onDismiss = { showAddSheet = false },
+            onTypeChange = { viewModel.loadCategories(it) },
             onCreate = { categoryId, type, amount, description ->
                 viewModel.createTransaction(categoryId, type, amount, description)
                 showAddSheet = false
@@ -125,7 +128,9 @@ fun TransactionsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionSheet(
+    categories: List<com.profinanzas.core.domain.model.Category>,
     onDismiss: () -> Unit,
+    onTypeChange: (String) -> Unit,
     onCreate: (categoryId: Int, type: String, amount: String, description: String) -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -140,11 +145,17 @@ fun AddTransactionSheet(
             var type by remember { mutableStateOf("EXPENSE") }
             var description by remember { mutableStateOf("") }
             var amount by remember { mutableStateOf("") }
+            var selectedCategory by remember { mutableStateOf<com.profinanzas.core.domain.model.Category?>(null) }
+            var categoryExpanded by remember { mutableStateOf(false) }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = type == "EXPENSE",
-                    onClick = { type = "EXPENSE" },
+                    onClick = {
+                        type = "EXPENSE"
+                        selectedCategory = null
+                        onTypeChange("EXPENSE")
+                    },
                     label = { Text("Gasto") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = ExpenseRed.copy(alpha = 0.1f),
@@ -152,12 +163,46 @@ fun AddTransactionSheet(
                 )
                 FilterChip(
                     selected = type == "INCOME",
-                    onClick = { type = "INCOME" },
+                    onClick = {
+                        type = "INCOME"
+                        selectedCategory = null
+                        onTypeChange("INCOME")
+                    },
                     label = { Text("Ingreso") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = IncomeGreen.copy(alpha = 0.1f),
                     ),
                 )
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = selectedCategory?.name ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Categoría") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false },
+                ) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category.name) },
+                            onClick = {
+                                selectedCategory = category
+                                categoryExpanded = false
+                            },
+                        )
+                    }
+                }
             }
 
             OutlinedTextField(
@@ -178,12 +223,16 @@ fun AddTransactionSheet(
             )
 
             Button(
-                onClick = { onCreate(1, type, amount, description) },
+                onClick = {
+                    selectedCategory?.let { cat ->
+                        onCreate(cat.id, type, amount, description)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                enabled = description.isNotBlank() && amount.toDoubleOrNull() != null,
+                enabled = selectedCategory != null && description.isNotBlank() && amount.toDoubleOrNull() != null,
             ) {
                 Text("Crear Transacción")
             }

@@ -2,6 +2,7 @@ package com.profinanzas.core.data.repository
 
 import com.profinanzas.core.api.ApiService
 import com.profinanzas.core.api.AuthInterceptor
+import com.profinanzas.core.data.local.TokenManager
 import com.profinanzas.core.data.model.*
 import com.profinanzas.core.domain.model.*
 import com.profinanzas.core.domain.repository.*
@@ -12,6 +13,7 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val api: ApiService,
     private val authInterceptor: AuthInterceptor,
+    private val tokenManager: TokenManager,
 ) : AuthRepository {
 
     private fun UserDto.toDomain() = User(id, email, username, firstName, lastName)
@@ -21,6 +23,9 @@ class AuthRepositoryImpl @Inject constructor(
         if (response.isSuccessful) {
             val body = response.body()!!
             authInterceptor.accessToken = body.access
+            authInterceptor.refreshToken = body.refresh
+            tokenManager.saveTokens(body.access, body.refresh)
+            tokenManager.saveUser(body.user.id, body.user.email, body.user.username)
             AuthResult(body.user.toDomain(), body.access, body.refresh)
         } else {
             throw Exception(extractError(response.errorBody()?.string()))
@@ -34,6 +39,9 @@ class AuthRepositoryImpl @Inject constructor(
         if (response.isSuccessful) {
             val body = response.body()!!
             authInterceptor.accessToken = body.access
+            authInterceptor.refreshToken = body.refresh
+            tokenManager.saveTokens(body.access, body.refresh)
+            tokenManager.saveUser(body.user.id, body.user.email, body.user.username)
             AuthResult(body.user.toDomain(), body.access, body.refresh)
         } else {
             throw Exception(extractError(response.errorBody()?.string()))
@@ -44,6 +52,8 @@ class AuthRepositoryImpl @Inject constructor(
         val response = api.logout(mapOf("refresh" to refreshToken))
         if (response.isSuccessful || response.code() == 204) {
             authInterceptor.accessToken = null
+            authInterceptor.refreshToken = null
+            tokenManager.clear()
         } else {
             throw Exception(extractError(response.errorBody()?.string()))
         }
@@ -83,6 +93,7 @@ class AuthRepositoryImpl @Inject constructor(
         if (response.isSuccessful) {
             val token = response.body()!!.access
             authInterceptor.accessToken = token
+            tokenManager.accessToken = token
             token
         } else {
             throw Exception(extractError(response.errorBody()?.string()))

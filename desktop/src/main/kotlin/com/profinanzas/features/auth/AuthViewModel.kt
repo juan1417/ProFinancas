@@ -1,5 +1,7 @@
 package com.profinanzas.features.auth
 
+import com.profinanzas.core.api.AuthInterceptor
+import com.profinanzas.core.data.local.TokenManager
 import com.profinanzas.core.domain.model.User
 import com.profinanzas.core.domain.repository.AuthResult
 import com.profinanzas.core.domain.usecase.auth.*
@@ -23,11 +25,37 @@ class AuthViewModel(
     private val loginUseCase: LoginUseCase = AppModule.loginUseCase,
     private val registerUseCase: RegisterUseCase = AppModule.registerUseCase,
     private val logoutUseCase: LogoutUseCase = AppModule.logoutUseCase,
+    private val tokenManager: TokenManager = AppModule.tokenManager,
+    private val authInterceptor: AuthInterceptor = AppModule.authInterceptor,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    init {
+        tryRestoreSession()
+    }
+
+    private fun tryRestoreSession() {
+        scope.launch {
+            if (tokenManager.isLoggedIn) {
+                authInterceptor.accessToken = tokenManager.accessToken
+                authInterceptor.refreshToken = tokenManager.refreshToken
+                val user = User(
+                    id = tokenManager.userId ?: "",
+                    email = tokenManager.userEmail ?: "",
+                    username = tokenManager.username ?: "",
+                    firstName = null,
+                    lastName = null,
+                )
+                _uiState.value = AuthUiState(
+                    user = user,
+                    isAuthenticated = true,
+                )
+            }
+        }
+    }
 
     fun login(email: String, password: String) {
         scope.launch {
@@ -71,7 +99,8 @@ class AuthViewModel(
 
     fun logout() {
         scope.launch {
-            logoutUseCase("")
+            val refreshToken = tokenManager.refreshToken ?: ""
+            logoutUseCase(refreshToken)
             _uiState.value = AuthUiState()
         }
     }

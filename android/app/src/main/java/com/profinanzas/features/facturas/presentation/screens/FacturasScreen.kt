@@ -16,12 +16,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.profinanzas.core.domain.model.Invoice
+import com.profinanzas.core.ui.formatDate
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.components.SegmentedTabs
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
+import com.profinanzas.features.facturas.presentation.sheet.ActualizarFacturaSheet
+import com.profinanzas.features.facturas.presentation.sheet.DetalleFacturaSheet
+import com.profinanzas.features.facturas.presentation.sheet.RegistrarFacturaSheet
 import com.profinanzas.features.facturas.presentation.viewmodel.FacturasViewModel
-import com.profinanzas.features.facturas.presentation.viewmodel.Invoice
 
 @Composable
 fun FacturasScreen(
@@ -30,6 +34,11 @@ fun FacturasScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Registro", "Historial", "Actualizar")
+
+    var showRegistrarSheet by remember { mutableStateOf(false) }
+    var showDetalleSheet by remember { mutableStateOf(false) }
+    var showActualizarSheet by remember { mutableStateOf(false) }
+    var selectedInvoice by remember { mutableStateOf<Invoice?>(null) }
 
     Column(
         modifier = Modifier
@@ -51,7 +60,7 @@ fun FacturasScreen(
                 Text("Gestión de facturas", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
             Button(
-                onClick = { /* TODO: open registrar modal */ },
+                onClick = { showRegistrarSheet = true },
                 colors = ButtonDefaults.buttonColors(containerColor = Accent),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -74,15 +83,102 @@ fun FacturasScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         when (selectedTab) {
-            0 -> RegistroTab(viewModel)
+            0 -> RegistroTab(
+                viewModel = viewModel,
+                onInvoiceClick = { invoice ->
+                    selectedInvoice = invoice
+                    showDetalleSheet = true
+                },
+            )
             1 -> HistorialTab(viewModel)
-            2 -> ActualizarTab(viewModel)
+            2 -> ActualizarTab(
+                viewModel = viewModel,
+                onUpdateClick = { invoice ->
+                    selectedInvoice = invoice
+                    showActualizarSheet = true
+                },
+            )
         }
+    }
+
+    // Registrar Factura Sheet
+    if (showRegistrarSheet) {
+        RegistrarFacturaSheet(
+            onDismiss = { showRegistrarSheet = false },
+            onScan = { showRegistrarSheet = false },
+            onSave = { provider, amount, dueDate, category, notes ->
+                viewModel.createInvoice(
+                    provider = provider,
+                    amount = amount,
+                    status = "PENDING",
+                    category = category,
+                    dueDate = dueDate,
+                    registeredDate = java.time.LocalDate.now().toString(),
+                    paidDate = null,
+                    notes = notes,
+                )
+                showRegistrarSheet = false
+            },
+        )
+    }
+
+    // Detalle Factura Sheet
+    if (showDetalleSheet && selectedInvoice != null) {
+        DetalleFacturaSheet(
+            invoice = selectedInvoice!!,
+            onDismiss = { showDetalleSheet = false },
+            onDelete = {
+                viewModel.deleteInvoice(selectedInvoice!!.id)
+                showDetalleSheet = false
+            },
+            onMarkPaid = {
+                viewModel.updateInvoice(
+                    id = selectedInvoice!!.id,
+                    provider = selectedInvoice!!.provider,
+                    amount = selectedInvoice!!.amount,
+                    status = "PAID",
+                    category = selectedInvoice!!.category,
+                    dueDate = selectedInvoice!!.dueDate,
+                    registeredDate = selectedInvoice!!.registeredDate,
+                    paidDate = java.time.LocalDate.now().toString(),
+                    notes = selectedInvoice!!.notes,
+                )
+                showDetalleSheet = false
+            },
+        )
+    }
+
+    // Actualizar Factura Sheet
+    if (showActualizarSheet && selectedInvoice != null) {
+        ActualizarFacturaSheet(
+            invoiceId = selectedInvoice!!.invoiceNumber,
+            provider = selectedInvoice!!.provider,
+            amount = String.format("%,.0f", selectedInvoice!!.amount),
+            notes = selectedInvoice!!.notes,
+            onDismiss = { showActualizarSheet = false },
+            onSave = { updatedProvider, updatedAmount, updatedNotes ->
+                viewModel.updateInvoice(
+                    id = selectedInvoice!!.id,
+                    provider = updatedProvider,
+                    amount = updatedAmount.toDoubleOrNull() ?: selectedInvoice!!.amount,
+                    status = selectedInvoice!!.status,
+                    category = selectedInvoice!!.category,
+                    dueDate = selectedInvoice!!.dueDate,
+                    registeredDate = selectedInvoice!!.registeredDate,
+                    paidDate = selectedInvoice!!.paidDate,
+                    notes = updatedNotes,
+                )
+                showActualizarSheet = false
+            },
+        )
     }
 }
 
 @Composable
-private fun RegistroTab(viewModel: FacturasViewModel) {
+private fun RegistroTab(
+    viewModel: FacturasViewModel,
+    onInvoiceClick: (Invoice) -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsState()
     val invoices = viewModel.getFilteredInvoices()
     val filters = listOf("Todas", "Pendientes", "Pagadas", "Vencidas")
@@ -161,21 +257,21 @@ private fun RegistroTab(viewModel: FacturasViewModel) {
         }
 
         items(invoices) { invoice ->
-            InvoiceRow(invoice)
+            InvoiceRow(invoice, onClick = { onInvoiceClick(invoice) })
         }
     }
 }
 
 @Composable
-private fun InvoiceRow(invoice: Invoice) {
+private fun InvoiceRow(invoice: Invoice, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO: open detalle modal */ }
+            .clickable(onClick = onClick)
             .padding(vertical = 14.dp, horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(invoice.id, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+        Text(invoice.invoiceNumber, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
         Text(invoice.provider, modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
         Text(
             "$ ${String.format("%,.0f", invoice.amount)}",
@@ -185,9 +281,9 @@ private fun InvoiceRow(invoice: Invoice) {
         )
         Box(modifier = Modifier.weight(1f)) {
             when (invoice.status) {
-                "paid" -> StatusPill("Pagada", Accent)
-                "pending" -> StatusPill("Pendiente", Warning)
-                "overdue" -> StatusPill("Vencida", Danger)
+                "PAID" -> StatusPill("Pagada", Accent)
+                "PENDING" -> StatusPill("Pendiente", Warning)
+                "OVERDUE" -> StatusPill("Vencida", Danger)
             }
         }
     }
@@ -221,8 +317,8 @@ private fun HistorialTab(viewModel: FacturasViewModel) {
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("${invoice.id} — ${invoice.provider}", fontWeight = FontWeight.Medium)
-                    Text("Reg: ${invoice.registeredDate} · Pag: ${invoice.paidDate}", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text("${invoice.invoiceNumber} — ${invoice.provider}", fontWeight = FontWeight.Medium)
+                    Text("Reg: ${formatDate(invoice.registeredDate)} · Pag: ${invoice.paidDate?.let { formatDate(it) } ?: "-"}", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
                 Text(
                     "$ ${String.format("%,.0f", invoice.amount)}",
@@ -236,8 +332,11 @@ private fun HistorialTab(viewModel: FacturasViewModel) {
 }
 
 @Composable
-private fun ActualizarTab(viewModel: FacturasViewModel) {
-    val invoices = viewModel.uiState.value.invoices.filter { it.status == "overdue" || it.notes.isNotEmpty() }
+private fun ActualizarTab(
+    viewModel: FacturasViewModel,
+    onUpdateClick: (Invoice) -> Unit,
+) {
+    val invoices = viewModel.uiState.value.invoices.filter { it.status == "OVERDUE" || it.notes.isNotEmpty() }
 
     LazyColumn {
         item {
@@ -248,7 +347,7 @@ private fun ActualizarTab(viewModel: FacturasViewModel) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* TODO: open actualizar modal */ }
+                    .clickable { onUpdateClick(invoice) }
                     .padding(vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -263,7 +362,7 @@ private fun ActualizarTab(viewModel: FacturasViewModel) {
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("${invoice.id} — ${invoice.provider}", fontWeight = FontWeight.Medium)
+                    Text("${invoice.invoiceNumber} — ${invoice.provider}", fontWeight = FontWeight.Medium)
                     Text(invoice.notes.ifEmpty { invoice.status }, style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
                 Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Muted, modifier = Modifier.size(14.dp))

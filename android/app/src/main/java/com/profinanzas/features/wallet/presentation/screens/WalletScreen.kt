@@ -9,12 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.profinanzas.core.ui.components.AppCard
-import com.profinanzas.core.ui.components.SegmentedTabs
 import com.profinanzas.core.ui.theme.*
 import com.profinanzas.features.wallet.presentation.components.BudgetProgress
 import com.profinanzas.features.wallet.presentation.components.BudgetProgressCard
@@ -29,39 +27,7 @@ fun WalletScreen(
     viewModel: WalletViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
     var showAddSheet by remember { mutableStateOf(false) }
-    var selectedCardTab by remember { mutableIntStateOf(0) }
-
-    val cardTabs = uiState.cards.map { "${it.brand} •${it.last4}" }
-
-    val sampleExpenses = remember(selectedCardTab) {
-        when (selectedCardTab) {
-            0 -> listOf(
-                Triple("Ramen Ichiran", "Hoy", "-$ 2,850"),
-                Triple("Metro Tokyo", "Hoy", "-$ 320"),
-                Triple("Don Quijote", "Lun", "-$ 3,150"),
-                Triple("Toho Cinemas", "Dom", "-$ 2,400"),
-                Triple("Farmacia Matsumoto", "Sáb", "-$ 1,890"),
-            )
-            1 -> listOf(
-                Triple("Electricidad TEPCO", "Ayer", "-$ 6,420"),
-                Triple("NTT DoCoMo", "Lun", "-$ 4,500"),
-                Triple("Agua Municipal", "Viernes", "-$ 2,100"),
-            )
-            else -> emptyList()
-        }
-    }
-
-    // Sample budgets (matching prototype)
-    val budgets = remember {
-        listOf(
-            BudgetProgress("1", "Alimentación", 12000.0, 8160.0),
-            BudgetProgress("2", "Transporte", 5000.0, 4100.0),
-            BudgetProgress("3", "Entretenimiento", 8000.0, 7600.0),
-            BudgetProgress("4", "Servicios", 10000.0, 4500.0),
-        )
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -126,60 +92,34 @@ fun WalletScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Presupuesto semanal",
+                    "Presupuestos",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                TextButton(onClick = { /* TODO: add budget */ }) {
-                    Text("+ Nuevo")
-                }
             }
         }
 
-        items(budgets) { budget ->
-            BudgetProgressCard(
-                budget = budget,
-                onEdit = { /* TODO: edit budget */ },
-            )
-        }
-
-        // Expense history per card
-        if (uiState.cards.isNotEmpty()) {
+        if (uiState.budgets.isEmpty()) {
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Historial de gastos por tarjeta",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                if (cardTabs.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    SegmentedTabs(
-                        options = cardTabs,
-                        selectedIndex = selectedCardTab,
-                        onSelected = { selectedCardTab = it },
+                AppCard {
+                    Text(
+                        "No hay presupuestos activos",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Muted,
                     )
                 }
             }
-
-            items(sampleExpenses) { (name, time, amount) ->
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(name, fontWeight = FontWeight.SemiBold)
-                            Text(time, style = MaterialTheme.typography.bodySmall, color = Muted)
-                        }
-                        Text(
-                            amount,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ExpenseRed,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                }
+        } else {
+            items(uiState.budgets) { budget ->
+                BudgetProgressCard(
+                    budget = BudgetProgress(
+                        id = budget.id.toString(),
+                        name = budget.categoryName ?: "General",
+                        limit = budget.amount,
+                        spent = budget.spent,
+                    ),
+                    onEdit = { /* TODO: edit budget */ },
+                )
             }
         }
 
@@ -202,10 +142,7 @@ fun WalletScreen(
                     colorHex = colorHex,
                     createdAt = System.currentTimeMillis(),
                 )
-                viewModel.addCard(
-                    context = context,
-                    card = card,
-                )
+                viewModel.addCard(card)
                 showAddSheet = false
             },
         )

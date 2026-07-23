@@ -31,3 +31,9 @@ class GetSummaryUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(period: String = "month") = repository.getSummary(period)
 }
+
+class DeleteTransactionUseCase @Inject constructor(
+    private val repository: TransactionRepository,
+) {
+    suspend operator fun invoke(id: Int) = repository.delete(id)
+}

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.ui.formatDate
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
@@ -34,7 +35,6 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
     ) {
         // Left: Table
         Column(modifier = Modifier.weight(2f)) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -54,7 +54,6 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Filters + Search
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -96,9 +95,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Table
             AppCard {
-                // Table header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -113,51 +110,59 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 
                 HorizontalDivider(color = Border)
 
-                // Table rows
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 500.dp),
-                ) {
-                    items(filteredInvoices) { invoice ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.selectInvoice(invoice) }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                invoice.id,
-                                modifier = Modifier.width(80.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Muted,
-                            )
-                            Text(
-                                invoice.provider,
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            Text(
-                                "$ ${String.format("%,.0f", invoice.amount)}",
-                                modifier = Modifier.width(120.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Text(
-                                invoice.dueDate,
-                                modifier = Modifier.width(120.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Muted,
-                            )
-                            Box(modifier = Modifier.width(100.dp)) {
-                                when (invoice.status) {
-                                    "paid" -> StatusPill("Pagada", Accent)
-                                    "pending" -> StatusPill("Pendiente", Warning)
-                                    "overdue" -> StatusPill("Vencida", Danger)
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = Accent)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 500.dp),
+                    ) {
+                        items(filteredInvoices) { invoice ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.selectInvoice(invoice) }
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    invoice.invoiceNumber,
+                                    modifier = Modifier.width(80.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Muted,
+                                )
+                                Text(
+                                    invoice.provider,
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    "$ ${String.format("%,.0f", invoice.amount)}",
+                                    modifier = Modifier.width(120.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    formatDate(invoice.dueDate),
+                                    modifier = Modifier.width(120.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Muted,
+                                )
+                                Box(modifier = Modifier.width(100.dp)) {
+                                    when (invoice.status) {
+                                        "PAID" -> StatusPill("Pagada", Accent)
+                                        "PENDING" -> StatusPill("Pendiente", Warning)
+                                        "OVERDUE" -> StatusPill("Vencida", Danger)
+                                    }
                                 }
                             }
+                            HorizontalDivider(color = Border, thickness = 0.5.dp)
                         }
-                        HorizontalDivider(color = Border, thickness = 0.5.dp)
                     }
                 }
             }
@@ -176,7 +181,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = invoice.id,
+                        text = invoice.invoiceNumber,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -190,11 +195,11 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                 AppCard {
                     DetailRow("Proveedor", invoice.provider)
                     DetailRow("Monto", "$ ${String.format("%,.0f", invoice.amount)}")
-                    DetailRow("Vencimiento", invoice.dueDate)
+                    DetailRow("Vencimiento", formatDate(invoice.dueDate))
                     DetailRow("Estado", invoice.status.replaceFirstChar { it.uppercase() })
                     DetailRow("Categoría", invoice.category)
-                    DetailRow("Registrada", invoice.registeredDate)
-                    invoice.paidDate?.let { DetailRow("Pagada", it) }
+                    DetailRow("Registrada", formatDate(invoice.registeredDate))
+                    invoice.paidDate?.let { DetailRow("Pagada", formatDate(it)) }
                     if (invoice.notes.isNotEmpty()) {
                         DetailRow("Notas", invoice.notes)
                     }
@@ -211,7 +216,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                         Text("Editar", color = Bg)
                     }
                     OutlinedButton(
-                        onClick = {},
+                        onClick = { viewModel.deleteInvoice(invoice.id) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Danger),
                     ) {

@@ -65,3 +65,30 @@ interface BudgetRepository {
     ): Result<Budget>
     suspend fun delete(id: Int): Result<Unit>
 }
+
+interface InvoiceRepository {
+    suspend fun list(): Result<List<Invoice>>
+    suspend fun get(id: String): Result<Invoice>
+    suspend fun create(
+        provider: String,
+        amount: Double,
+        status: String,
+        category: String,
+        dueDate: String,
+        registeredDate: String,
+        paidDate: String?,
+        notes: String,
+    ): Result<Invoice>
+    suspend fun update(
+        id: String,
+        provider: String,
+        amount: Double,
+        status: String,
+        category: String,
+        dueDate: String,
+        registeredDate: String,
+        paidDate: String?,
+        notes: String,
+    ): Result<Invoice>
+    suspend fun delete(id: String): Result<Unit>
+}

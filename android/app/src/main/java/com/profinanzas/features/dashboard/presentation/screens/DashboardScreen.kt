@@ -20,6 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.profinanzas.core.ui.formatDate
+import com.profinanzas.core.ui.formatMonthYear
+import com.profinanzas.core.ui.formatRelativeDate
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
@@ -35,8 +38,6 @@ private val categoryNames = listOf(
     "Alimentación", "Transporte", "Servicios", "Compras", "Salud"
 )
 
-private val categoryPercentages = listOf(35, 25, 20, 12, 8)
-
 @Composable
 fun DashboardScreen(
     onNavigateToProfile: () -> Unit = {},
@@ -48,6 +49,9 @@ fun DashboardScreen(
     val income = summary?.totalIncome ?: 0.0
     val expenses = summary?.totalExpenses ?: 0.0
     val balance = summary?.balance ?: 0.0
+    val recentTransactions = uiState.recentTransactions
+    val budgets = uiState.budgets
+    val monthYear = formatMonthYear()
 
     LazyColumn(
         modifier = Modifier
@@ -61,7 +65,7 @@ fun DashboardScreen(
         item {
             Column {
                 Text(
-                    text = "RESUMEN · JULIO 2026",
+                    text = "RESUMEN · ${monthYear.uppercase()}",
                     style = MaterialTheme.typography.labelSmall,
                     color = Accent,
                     letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing,
@@ -131,16 +135,12 @@ fun DashboardScreen(
             WeeklyBarChart()
         }
 
-        // ─── Donut + Recent Transactions ───────────────────────────────
+        // ─── Recent Transactions + Budget Progress ─────────────────────
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Donut
-                Box(modifier = Modifier.weight(1f)) {
-                    DonutChart()
-                }
                 // Recent transactions
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -149,11 +149,61 @@ fun DashboardScreen(
                         color = Muted,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    RecentTransactionItem("Ramen Ichiran", "Hoy, 12:30", -2850.0, CatFood, Icons.Default.Restaurant)
-                    RecentTransactionItem("Metro Tokyo", "Hoy, 08:15", -320.0, CatTransport, Icons.Default.Train)
-                    RecentTransactionItem("Depósito freelance", "Ayer, 16:45", 12000.0, Accent, Icons.Default.AccountBalance)
-                    RecentTransactionItem("Electricidad TEPCO", "Ayer, 09:00", -6420.0, CatServices, Icons.Default.Bolt)
-                    RecentTransactionItem("Don Quijote", "Lun, 19:20", -3150.0, CatShopping, Icons.Default.ShoppingBag)
+                    if (recentTransactions.isEmpty()) {
+                        Text(
+                            text = "Sin transacciones recientes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                    } else {
+                        recentTransactions.forEach { tx ->
+                            val icon = when {
+                                tx.isIncome -> Icons.Default.AccountBalance
+                                tx.categoryName?.contains("Alimentación", true) == true -> Icons.Default.Restaurant
+                                tx.categoryName?.contains("Transporte", true) == true -> Icons.Default.Train
+                                tx.categoryName?.contains("Servicio", true) == true -> Icons.Default.Bolt
+                                else -> Icons.Default.ShoppingBag
+                            }
+                            val color = when {
+                                tx.isIncome -> Accent
+                                tx.categoryName?.contains("Alimentación", true) == true -> CatFood
+                                tx.categoryName?.contains("Transporte", true) == true -> CatTransport
+                                tx.categoryName?.contains("Servicio", true) == true -> CatServices
+                                else -> CatShopping
+                            }
+                            RecentTransactionItem(
+                                title = tx.description,
+                                subtitle = formatRelativeDate(tx.transactionDate),
+                                amount = tx.signedAmount,
+                                categoryColor = color,
+                                icon = icon,
+                            )
+                        }
+                    }
+                }
+                // Budget progress
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "PRESUPUESTOS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Muted,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (budgets.isEmpty()) {
+                        Text(
+                            text = "Sin presupuestos activos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                    } else {
+                        budgets.take(4).forEach { budget ->
+                            BudgetItem(
+                                name = budget.categoryName ?: "General",
+                                total = budget.amount,
+                                spent = budget.spent,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -211,96 +261,6 @@ private fun WeeklyBarChart() {
 }
 
 @Composable
-private fun DonutChart() {
-    AppCard {
-        Text("Por categoría", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            androidx.compose.foundation.Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-            ) {
-                val strokeWidth = 24.dp.toPx()
-                val radius = (size.minDimension - strokeWidth) / 2
-                val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-
-                // Background circle
-                drawCircle(
-                    color = Border,
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
-                )
-
-                // Segments
-                var startAngle = -90f
-                categoryPercentages.forEach { pct ->
-                    val sweep = pct * 3.6f
-                    drawArc(
-                        color = categoryColors[categoryPercentages.indexOf(pct)],
-                        startAngle = startAngle,
-                        sweepAngle = sweep,
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
-                        topLeft = center - androidx.compose.ui.geometry.Offset(radius, radius),
-                        size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
-                    )
-                    startAngle += sweep
-                }
-            }
-
-            // Center text
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$${String.format("%.1f", 32.1)}k",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text("Total", style = MaterialTheme.typography.labelSmall, color = Muted)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Legend
-        categoryNames.forEachIndexed { index, name ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(categoryColors[index]),
-                    )
-                    Text(name, style = MaterialTheme.typography.bodySmall, color = Muted)
-                }
-                Text(
-                    "${categoryPercentages[index]}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun RecentTransactionItem(
     title: String,
     subtitle: String,
@@ -332,5 +292,45 @@ private fun RecentTransactionItem(
             fontWeight = FontWeight.SemiBold,
             color = if (amount > 0) Accent else Danger,
         )
+    }
+}
+
+@Composable
+private fun BudgetItem(name: String, total: Double, spent: Double) {
+    val pct = if (total > 0) (spent / total) else 0.0
+    val barColor = when {
+        pct < 0.7 -> Accent
+        pct < 0.9 -> Warning
+        else -> Danger
+    }
+
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Text(
+                "${String.format("%,.0f", spent)} / ${String.format("%,.0f", total)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = Muted,
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(Border)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(pct.toFloat().coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(barColor)
+            )
+        }
     }
 }

@@ -16,10 +16,14 @@ import androidx.navigation.compose.rememberNavController
 import com.profinanzas.core.ui.components.ProAppBar
 import com.profinanzas.core.ui.components.ProBottomNav
 import com.profinanzas.core.ui.components.BottomNavItem
+import com.profinanzas.features.analytics.presentation.screens.AnalyticsScreen
 import com.profinanzas.features.auth.presentation.screens.ProfileScreen
 import com.profinanzas.features.auth.presentation.viewmodel.AuthUiState
+import com.profinanzas.features.categories.presentation.screens.CategoriesScreen
 import com.profinanzas.features.dashboard.presentation.screens.DashboardScreen
 import com.profinanzas.features.facturas.presentation.screens.FacturasScreen
+import com.profinanzas.features.scanner.presentation.screens.ScannerScreen
+import com.profinanzas.features.transactions.presentation.screens.TransactionsScreen
 import com.profinanzas.features.wallet.presentation.screens.WalletScreen
 
 @Composable
@@ -36,6 +40,7 @@ fun MainShell(
     val items = listOf(
         BottomNavItem("Inicio", Icons.Default.Home, Screen.Dashboard.route),
         BottomNavItem("Facturas", Icons.Default.Receipt, Screen.Facturas.route),
+        BottomNavItem("Transacciones", Icons.Default.SwapHoriz, Screen.Transactions.route),
         BottomNavItem("Tarjetas", Icons.Default.CreditCard, Screen.Wallet.route),
     )
 
@@ -80,6 +85,10 @@ fun MainShell(
                 composable(Screen.Dashboard.route) { DashboardScreen() }
                 composable(Screen.Facturas.route) { FacturasScreen() }
                 composable(Screen.Wallet.route) { WalletScreen() }
+                composable(Screen.Transactions.route) { TransactionsScreen() }
+                composable(Screen.Categories.route) { CategoriesScreen() }
+                composable(Screen.Analytics.route) { AnalyticsScreen() }
+                composable(Screen.Scanner.route) { ScannerScreen() }
             }
         }
     }

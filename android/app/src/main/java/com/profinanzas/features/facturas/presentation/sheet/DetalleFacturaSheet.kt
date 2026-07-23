@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.domain.model.Invoice
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
-import com.profinanzas.features.facturas.presentation.viewmodel.Invoice
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +41,7 @@ fun DetalleFacturaSheet(
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("${invoice.id} — ${invoice.provider}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text("${invoice.invoiceNumber} — ${invoice.provider}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
 
             DetailRow("Proveedor", invoice.provider)
             DetailRow("Monto", "$ ${String.format("%,.0f", invoice.amount)}", valueFontWeight = FontWeight.Bold)
@@ -51,9 +51,9 @@ fun DetalleFacturaSheet(
             ) {
                 Text("Estado", style = MaterialTheme.typography.bodySmall, color = Muted)
                 when (invoice.status) {
-                    "paid" -> StatusPill("Pagada", Accent)
-                    "pending" -> StatusPill("Pendiente", Warning)
-                    "overdue" -> StatusPill("Vencida", Danger)
+                    "PAID" -> StatusPill("Pagada", Accent)
+                    "PENDING" -> StatusPill("Pendiente", Warning)
+                    "OVERDUE" -> StatusPill("Vencida", Danger)
                 }
             }
             DetailRow("Vencimiento", invoice.dueDate)
@@ -74,7 +74,7 @@ fun DetalleFacturaSheet(
                     onClick = onMarkPaid,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
-                    enabled = invoice.status != "paid",
+                    enabled = invoice.status != "PAID",
                 ) {
                     Text("Marcar pagada")
                 }

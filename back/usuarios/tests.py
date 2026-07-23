@@ -148,3 +148,65 @@ class ChangePasswordViewTest(TestCase):
             'new_password_confirm': 'NewPass456!',
         }, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutViewTest(TestCase):
+    """Tests del endpoint de logout."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user(email='logout@profinanzas.com', password='StrongPass123!')
+        self.client.force_authenticate(user=self.user)
+        # Get refresh token
+        login_res = self.client.post(LOGIN_URL, {
+            'email': 'logout@profinanzas.com',
+            'password': 'StrongPass123!',
+        }, format='json')
+        self.refresh_token = login_res.data['refresh']
+
+    def test_logout_exitoso_devuelve_200(self):
+        res = self.client.post(LOGOUT_URL, {'refresh': self.refresh_token}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_logout_token_invalido_devuelve_400(self):
+        res = self.client.post(LOGOUT_URL, {'refresh': 'invalid-token'}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_logout_token_blacklisteado_no_se_puede_usar(self):
+        self.client.post(LOGOUT_URL, {'refresh': self.refresh_token}, format='json')
+        # Intentar usar el token para refresh
+        res = self.client.post('/api/auth/token/refresh/', {
+            'refresh': self.refresh_token,
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_sin_autenticacion_devuelve_401(self):
+        self.client.force_authenticate(user=None)
+        res = self.client.post(LOGOUT_URL, {'refresh': self.refresh_token}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TokenRefreshViewTest(TestCase):
+    """Tests del endpoint de refresh de token."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user(email='refresh@profinanzas.com', password='StrongPass123!')
+        login_res = self.client.post(LOGIN_URL, {
+            'email': 'refresh@profinanzas.com',
+            'password': 'StrongPass123!',
+        }, format='json')
+        self.refresh_token = login_res.data['refresh']
+
+    def test_refresh_exitoso_devuelve_200_y_nuevo_access(self):
+        res = self.client.post('/api/auth/token/refresh/', {
+            'refresh': self.refresh_token,
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res.data)
+
+    def test_refresh_token_invalido_devuelve_401(self):
+        res = self.client.post('/api/auth/token/refresh/', {
+            'refresh': 'invalid-token',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
