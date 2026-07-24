@@ -26,7 +26,7 @@ import com.profinanzas.features.auth.presentation.viewmodel.AuthViewModel
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBack: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel(),
+    viewModel: AuthViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -115,7 +115,7 @@ fun RegisterScreen(
             }
 
             Button(
-                onClick = { viewModel.register(email, username, password) },
+                onClick = { viewModel.register(email, username, password, confirmPassword) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

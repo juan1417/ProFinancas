@@ -109,7 +109,7 @@ data class InvoiceDto(
     @SerializedName("invoice_number") val invoiceNumber: String,
     val user: String,
     val provider: String,
-    val amount: Double,
+    val amount: String,
     val status: String,
     val category: String,
     @SerializedName("due_date") val dueDate: String,
@@ -122,7 +122,7 @@ data class InvoiceDto(
 
 data class InvoiceCreateRequest(
     val provider: String,
-    val amount: Double,
+    val amount: String,
     val status: String,
     val category: String,
     @SerializedName("due_date") val dueDate: String,

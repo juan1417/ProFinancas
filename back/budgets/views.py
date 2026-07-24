@@ -29,7 +29,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
         ).select_related('category')
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action in ('create', 'update', 'partial_update'):
             return BudgetCreateSerializer
         return BudgetSerializer
 

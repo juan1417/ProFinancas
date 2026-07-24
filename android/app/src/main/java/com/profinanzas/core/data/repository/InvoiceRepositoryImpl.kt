@@ -41,7 +41,7 @@ class InvoiceRepositoryImpl @Inject constructor(
 
     override suspend fun create(
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,
@@ -59,7 +59,7 @@ class InvoiceRepositoryImpl @Inject constructor(
     override suspend fun update(
         id: String,
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,

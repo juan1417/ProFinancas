@@ -44,7 +44,7 @@ fun DetalleFacturaSheet(
             Text("${invoice.invoiceNumber} — ${invoice.provider}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
 
             DetailRow("Proveedor", invoice.provider)
-            DetailRow("Monto", "$ ${String.format("%,.0f", invoice.amount)}", valueFontWeight = FontWeight.Bold)
+            DetailRow("Monto", "$ $invoice.amount", valueFontWeight = FontWeight.Bold)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

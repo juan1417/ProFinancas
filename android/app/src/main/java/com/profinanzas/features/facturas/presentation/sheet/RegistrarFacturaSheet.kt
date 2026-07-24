@@ -17,7 +17,7 @@ import com.profinanzas.core.ui.theme.*
 fun RegistrarFacturaSheet(
     onDismiss: () -> Unit,
     onScan: () -> Unit,
-    onSave: (provider: String, amount: Double, dueDate: String, category: String, notes: String) -> Unit,
+    onSave: (provider: String, amount: String, dueDate: String, category: String, notes: String) -> Unit,
 ) {
     var provider by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
@@ -160,8 +160,7 @@ fun RegistrarFacturaSheet(
                 }
                 Button(
                     onClick = {
-                        val parsedAmount = amount.toDoubleOrNull() ?: 0.0
-                        onSave(provider, parsedAmount, dueDate, category, notes)
+                        onSave(provider, amount, dueDate, category, notes)
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),

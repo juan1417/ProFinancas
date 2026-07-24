@@ -74,7 +74,7 @@ class FacturasViewModel @Inject constructor(
 
     fun createInvoice(
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,
@@ -93,7 +93,7 @@ class FacturasViewModel @Inject constructor(
     fun updateInvoice(
         id: String,
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,

@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count
+from django.utils.dateparse import parse_date
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Category, Transaction
@@ -98,11 +99,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 {'error': f"Periodo inválido. Valores permitidos: {', '.join(sorted(self.VALID_PERIODS))}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        if start_date and not parse_date(start_date):
+            return Response({'error': 'start_date inválido. Formato esperado: YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+        if end_date and not parse_date(end_date):
+            return Response({'error': 'end_date inválido. Formato esperado: YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
         data = TransactionService.get_summary(
             self.get_queryset(),
             period=period,
-            start_date=request.query_params.get('start_date'),
-            end_date=request.query_params.get('end_date'),
+            start_date=start_date,
+            end_date=end_date,
         )
         return Response(data)
 

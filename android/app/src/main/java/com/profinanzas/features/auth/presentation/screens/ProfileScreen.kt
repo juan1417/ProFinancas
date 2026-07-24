@@ -88,11 +88,6 @@ fun ProfileScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Muted,
             )
-            Text(
-                text = "Miembro desde Ene 2025",
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted,
-            )
         }
 
         // Menu

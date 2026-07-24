@@ -144,7 +144,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                                     fontWeight = FontWeight.Medium,
                                 )
                                 Text(
-                                    "$ ${String.format("%,.0f", invoice.amount)}",
+                                    "$ $invoice.amount",
                                     modifier = Modifier.width(120.dp),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.SemiBold,
@@ -196,7 +196,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 
                 AppCard {
                     DetailRow("Proveedor", invoice.provider)
-                    DetailRow("Monto", "$ ${String.format("%,.0f", invoice.amount)}")
+                    DetailRow("Monto", "$ $invoice.amount")
                     DetailRow("Vencimiento", formatDate(invoice.dueDate))
                     DetailRow("Estado", invoice.status.replaceFirstChar { it.uppercase() })
                     DetailRow("Categoría", invoice.category)
@@ -233,7 +233,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                 EditInvoiceDialog(
                     invoice = invoice,
                     onDismiss = { showEditDialog = false },
-                    onSave = { provider, amount, status, category, dueDate, notes ->
+                    onSave = { provider, amount, status, category, dueDate, paidDate, notes ->
                         viewModel.updateInvoice(
                             invoice.id,
                             InvoiceCreateRequest(
@@ -243,7 +243,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                                 category = category,
                                 dueDate = dueDate,
                                 registeredDate = invoice.registeredDate,
-                                paidDate = invoice.paidDate,
+                                paidDate = paidDate,
                                 notes = notes,
                             )
                         )
@@ -259,16 +259,17 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 private fun EditInvoiceDialog(
     invoice: com.profinanzas.core.domain.model.Invoice,
     onDismiss: () -> Unit,
-    onSave: (provider: String, amount: Double, status: String, category: String, dueDate: String, notes: String) -> Unit,
+    onSave: (provider: String, amount: String, status: String, category: String, dueDate: String, paidDate: String?, notes: String) -> Unit,
 ) {
     var provider by remember { mutableStateOf(invoice.provider) }
-    var amount by remember { mutableStateOf(invoice.amount.toString()) }
+    var amount by remember { mutableStateOf(invoice.amount) }
     var status by remember { mutableStateOf(invoice.status) }
     var category by remember { mutableStateOf(invoice.category) }
     var dueDate by remember { mutableStateOf(invoice.dueDate) }
     var notes by remember { mutableStateOf(invoice.notes) }
 
     val statuses = listOf("PENDING", "PAID", "OVERDUE")
+    val today = java.time.LocalDate.now().toString()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -314,8 +315,9 @@ private fun EditInvoiceDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val parsedAmount = amount.toDoubleOrNull() ?: invoice.amount
-                    onSave(provider, parsedAmount, status, category, dueDate, notes)
+                    val parsedAmount = amount.ifBlank { invoice.amount }
+                    val paidDate = if (status == "PAID") (invoice.paidDate ?: today) else null
+                    onSave(provider, parsedAmount, status, category, dueDate, paidDate, notes)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
             ) {

@@ -28,9 +28,20 @@ fun CategoriesScreen(
     var editingCategory by remember { mutableStateOf<Category?>(null) }
     val tabs = listOf("Todos", "Ingresos", "Gastos")
 
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showCreateSheet = true },
+                containerColor = NavyBlue,
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Crear categoría")
+            }
+        },
+    ) { padding ->
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .padding(padding)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -59,6 +70,7 @@ fun CategoriesScreen(
         item {
             Spacer(modifier = Modifier.height(64.dp))
         }
+    }
     }
 
     if (showCreateSheet) {

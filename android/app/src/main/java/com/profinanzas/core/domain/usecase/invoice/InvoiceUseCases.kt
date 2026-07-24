@@ -20,7 +20,7 @@ class CreateInvoiceUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,
@@ -36,7 +36,7 @@ class UpdateInvoiceUseCase @Inject constructor(
     suspend operator fun invoke(
         id: String,
         provider: String,
-        amount: Double,
+        amount: String,
         status: String,
         category: String,
         dueDate: String,

@@ -32,9 +32,9 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun register(email: String, username: String, password: String): Result<AuthResult> = runCatching {
+    override suspend fun register(email: String, username: String, password: String, passwordConfirm: String): Result<AuthResult> = runCatching {
         val response = api.register(mapOf(
-            "email" to email, "username" to username, "password" to password
+            "email" to email, "username" to username, "password" to password, "password_confirm" to passwordConfirm
         ))
         if (response.isSuccessful) {
             val body = response.body()!!

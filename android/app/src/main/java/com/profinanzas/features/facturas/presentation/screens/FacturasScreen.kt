@@ -153,14 +153,14 @@ fun FacturasScreen(
         ActualizarFacturaSheet(
             invoiceId = selectedInvoice!!.invoiceNumber,
             provider = selectedInvoice!!.provider,
-            amount = String.format("%,.0f", selectedInvoice!!.amount),
+            amount = selectedInvoice!!.amount,
             notes = selectedInvoice!!.notes,
             onDismiss = { showActualizarSheet = false },
             onSave = { updatedProvider, updatedAmount, updatedNotes ->
                 viewModel.updateInvoice(
                     id = selectedInvoice!!.id,
                     provider = updatedProvider,
-                    amount = updatedAmount.toDoubleOrNull() ?: selectedInvoice!!.amount,
+                    amount = updatedAmount,
                     status = selectedInvoice!!.status,
                     category = selectedInvoice!!.category,
                     dueDate = selectedInvoice!!.dueDate,
@@ -274,7 +274,7 @@ private fun InvoiceRow(invoice: Invoice, onClick: () -> Unit) {
         Text(invoice.invoiceNumber, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
         Text(invoice.provider, modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
         Text(
-            "$ ${String.format("%,.0f", invoice.amount)}",
+            "$ $invoice.amount",
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.labelMedium,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
@@ -321,7 +321,7 @@ private fun HistorialTab(viewModel: FacturasViewModel) {
                     Text("Reg: ${formatDate(invoice.registeredDate)} · Pag: ${invoice.paidDate?.let { formatDate(it) } ?: "-"}", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
                 Text(
-                    "$ ${String.format("%,.0f", invoice.amount)}",
+                    "$ $invoice.amount",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )

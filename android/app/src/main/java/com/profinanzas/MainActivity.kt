@@ -58,12 +58,14 @@ fun ProFinanzasNavHost() {
                 LoginScreen(
                     onLoginSuccess = { /* AuthViewModel updates state */ },
                     onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                    viewModel = authViewModel,
                 )
             }
             composable(Screen.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = { /* AuthViewModel updates state */ },
                     onBack = { navController.popBackStack() },
+                    viewModel = authViewModel,
                 )
             }
         }

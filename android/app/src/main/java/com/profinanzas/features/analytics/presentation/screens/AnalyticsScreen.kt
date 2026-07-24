@@ -152,9 +152,10 @@ fun AnalyticsScreen(
             AppCard {
                 Text("Desglose por Categoría", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(12.dp))
-                summary.byCategory.filter { it.categoryType == "EXPENSE" }.forEach { item ->
-                    val maxAmount = summary.byCategory.filter { it.categoryType == "EXPENSE" }.maxOfOrNull { it.totalAmount } ?: 1.0
-                    val widthFraction = (item.totalAmount / maxAmount).toFloat()
+                val expenseCategories = summary.byCategory.filter { it.categoryType == "EXPENSE" }
+                val maxAmount = expenseCategories.maxOfOrNull { it.totalAmount } ?: 1.0
+                expenseCategories.forEach { item ->
+                    val widthFraction = (item.totalAmount / maxAmount.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
 
                     Row(
                         modifier = Modifier

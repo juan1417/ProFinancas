@@ -42,9 +42,9 @@ class CategorySerializer(serializers.ModelSerializer):
         Validación a nivel de objeto para asegurar que no exista
         una categoría duplicada para el mismo usuario
         """
-        user = data.get('user') or self.instance.user if self.instance else None
-        name = data.get('name')
-        type_cat = data.get('type')
+        user = self.context['request'].user
+        name = data.get('name', self.instance.name if self.instance else None)
+        type_cat = data.get('type', self.instance.type if self.instance else None)
         
         if user and name and type_cat:
             # Excluir la instancia actual en caso de actualización
@@ -122,7 +122,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         """
         category = data.get('category') or (self.instance.category if self.instance else None)
         transaction_type = data.get('type')
-        user = data.get('user') or (self.instance.user if self.instance else None)
+        user = self.context['request'].user
         
         # Validar que la categoría pertenezca al usuario
         if category and user and category.user != user:

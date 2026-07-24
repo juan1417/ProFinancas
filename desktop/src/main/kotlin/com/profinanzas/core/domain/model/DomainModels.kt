@@ -74,7 +74,7 @@ data class Invoice(
     val id: String,
     val invoiceNumber: String,
     val provider: String,
-    val amount: Double,
+    val amount: String,
     val status: String,
     val category: String,
     val dueDate: String,

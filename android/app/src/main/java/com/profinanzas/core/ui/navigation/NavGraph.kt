@@ -94,11 +94,4 @@ fun MainShell(
             }
         }
     }
-
-    // Auto-navigate to login when logged out
-    LaunchedEffect(authUiState.isAuthenticated) {
-        if (!authUiState.isAuthenticated && !authUiState.isLoading) {
-            onNavigateToLogin()
-        }
-    }
 }

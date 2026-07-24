@@ -79,10 +79,10 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(email: String, username: String, password: String) {
+    fun register(email: String, username: String, password: String, passwordConfirm: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            registerUseCase(email, username, password)
+            registerUseCase(email, username, password, passwordConfirm)
                 .onSuccess { result ->
                     _uiState.value = _uiState.value.copy(
                         user = result.user,
@@ -106,9 +106,14 @@ class AuthViewModel @Inject constructor(
             val refreshToken = tokenManager.refreshToken ?: ""
             logoutUseCase(refreshToken)
                 .onSuccess {
+                    authInterceptor.accessToken = null
+                    authInterceptor.refreshToken = null
+                    tokenManager.clear()
                     _uiState.value = AuthUiState()
                 }
                 .onFailure {
+                    authInterceptor.accessToken = null
+                    authInterceptor.refreshToken = null
                     tokenManager.clear()
                     _uiState.value = AuthUiState()
                 }

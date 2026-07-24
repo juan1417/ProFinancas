@@ -166,7 +166,11 @@ class TestTransactionModel(TestCase):
         que se rompia en updates parciales via DRF. La regla de
         negocio sigue activa — solo se ejecuta en otro lugar."""
         from rest_framework.exceptions import ValidationError as DRFValidation
+        from rest_framework.test import APIRequestFactory
         from transactions.serializers import TransactionSerializer
+        factory = APIRequestFactory()
+        request = factory.post('/api/transactions/')
+        request.user = self.user
         serializer = TransactionSerializer(data={
             'user': self.user.id,
             'category': self.expense_category.id,
@@ -174,7 +178,7 @@ class TestTransactionModel(TestCase):
             'amount': '100.00',
             'description': 'Test',
             'transaction_date': timezone.now().isoformat(),
-        })
+        }, context={'request': request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('type', serializer.errors)
     

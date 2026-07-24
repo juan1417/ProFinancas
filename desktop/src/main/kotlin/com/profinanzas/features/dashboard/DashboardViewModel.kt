@@ -66,6 +66,9 @@ class DashboardViewModel(
                         recentTransactions = transactions.take(5),
                     )
                 }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(error = e.message)
+                }
         }
     }
 
@@ -74,6 +77,9 @@ class DashboardViewModel(
             getBudgets()
                 .onSuccess { budgets ->
                     _uiState.value = _uiState.value.copy(budgets = budgets)
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(error = e.message)
                 }
         }
     }
