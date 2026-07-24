@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.domain.model.Category
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.theme.*
 
@@ -21,6 +22,7 @@ import com.profinanzas.core.ui.theme.*
 fun CategoriesScreen(viewModel: CategoriesViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
+    var editingCategory by remember { mutableStateOf<Category?>(null) }
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Todos", "Ingresos", "Gastos")
 
@@ -108,6 +110,12 @@ fun CategoriesScreen(viewModel: CategoriesViewModel) {
                                 }
                             }
                             IconButton(
+                                onClick = { editingCategory = category },
+                                modifier = Modifier.size(32.dp),
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Muted, modifier = Modifier.size(16.dp))
+                            }
+                            IconButton(
                                 onClick = { viewModel.deleteCategory(category.id) },
                                 modifier = Modifier.size(32.dp),
                             ) {
@@ -127,6 +135,17 @@ fun CategoriesScreen(viewModel: CategoriesViewModel) {
             onCreate = { name, type, description ->
                 viewModel.createCategory(name, type, description)
                 showCreateDialog = false
+            },
+        )
+    }
+
+    editingCategory?.let { category ->
+        EditCategoryDialog(
+            category = category,
+            onDismiss = { editingCategory = null },
+            onSave = { name, type, description ->
+                viewModel.updateCategory(category.id, name, type, description)
+                editingCategory = null
             },
         )
     }
@@ -182,6 +201,67 @@ private fun CreateCategoryDialog(
                 enabled = name.length >= 3,
             ) {
                 Text("Crear")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun EditCategoryDialog(
+    category: Category,
+    onDismiss: () -> Unit,
+    onSave: (name: String, type: String, description: String?) -> Unit,
+) {
+    var name by remember { mutableStateOf(category.name) }
+    var type by remember { mutableStateOf(category.type) }
+    var description by remember { mutableStateOf(category.description ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Categoría") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = type == "EXPENSE",
+                        onClick = { type = "EXPENSE" },
+                        label = { Text("Gasto") },
+                    )
+                    FilterChip(
+                        selected = type == "INCOME",
+                        onClick = { type = "INCOME" },
+                        label = { Text("Ingreso") },
+                    )
+                }
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre (mín. 3 caracteres)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name, type, description.ifBlank { null }) },
+                enabled = name.length >= 3,
+            ) {
+                Text("Guardar")
             }
         },
         dismissButton = {

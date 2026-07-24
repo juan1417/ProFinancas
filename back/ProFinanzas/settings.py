@@ -194,6 +194,12 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
     if origin.strip()
 ]
+if not CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://10.0.2.2:8000',
+    ]
 CORS_ALLOW_CREDENTIALS = True
 
 # ─── Seguridad HTTP (solo cuando DEBUG=False) ─────────────────────────────────

@@ -25,6 +25,7 @@ fun ProfileScreen(
     uiState: AuthUiState,
     onLogout: () -> Unit,
     onNavigateBack: () -> Unit,
+    onUpdateProfile: (firstName: String, lastName: String, username: String) -> Unit = { _, _, _ -> },
 ) {
     var showEditSheet by remember { mutableStateOf(false) }
     var showPreferencesSheet by remember { mutableStateOf(false) }
@@ -144,10 +145,14 @@ fun ProfileScreen(
     // Sheets
     if (showEditSheet) {
         EditProfileSheet(
-            currentName = user?.fullName ?: "",
-            currentEmail = user?.email ?: "",
+            currentFirstName = user?.firstName ?: "",
+            currentLastName = user?.lastName ?: "",
+            currentUsername = user?.username ?: "",
             onDismiss = { showEditSheet = false },
-            onSave = { showEditSheet = false },
+            onSave = { firstName, lastName, username ->
+                onUpdateProfile(firstName, lastName, username)
+                showEditSheet = false
+            },
         )
     }
 

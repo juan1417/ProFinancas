@@ -45,6 +45,9 @@ fun ProFinanzasNavHost() {
                     popUpTo(0) { inclusive = true }
                 }
             },
+            onUpdateProfile = { firstName, lastName, username ->
+                authViewModel.updateProfile(firstName, lastName, username)
+            },
         )
     } else {
         NavHost(

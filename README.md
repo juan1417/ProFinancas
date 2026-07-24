@@ -18,20 +18,7 @@ ProFinancas es una aplicación fullstack para el control y análisis de finanzas
 - **Analíticas avanzadas** — Gráfica comparativa de ingresos vs gastos, KPIs por período y desglose por categoría
 - **Gestión de billeteras** — Vista de tarjetas bancarias, tasa de ahorro y acciones rápidas (transferir, agregar fondos)
 - **Autenticación segura** — Login y registro con tokens JWT; soporte para Touch ID y Face ID (placeholder)
-- **Modo offline-ready** — Arquitectura preparada para caché local
-
----
-
-## Pantallas
-
-| Pantalla | Descripción |
-|---|---|
-| Login / Registro | Autenticación con JWT |
-| Dashboard | Portafolio, presupuesto y gráfica de donut por categoría |
-| Expense Manager | Lista de transacciones con búsqueda y filtros |
-| Invoice Scanner | Visor de cámara y revisión de datos extraídos |
-| Analytics | KPIs, gráfica de barras y breakdown por categoría |
-| Wallets | Tarjeta bancaria, estadísticas y acciones rápidas |
+- **Presupuestos** — Define límites mensuales por categoría y monitorea tu progreso
 
 ---
 
@@ -39,14 +26,45 @@ ProFinancas es una aplicación fullstack para el control y análisis de finanzas
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Python · Django 5 · Django REST Framework |
-| Frontend | Flutter 3 · Dart |
+| Backend | Python · Django 6 · Django REST Framework |
+| Android | Kotlin · Jetpack Compose · Material 3 · Hilt |
+| Desktop | Kotlin · Compose Desktop · Material 3 |
 | Autenticación | JWT (SimpleJWT) |
-| Base de datos | SQLite (desarrollo) / PostgreSQL (producción) |
-| Estado (Flutter) | Provider |
-| HTTP client | Dio |
-| Gráficas | fl_chart |
-| Fuentes | Google Fonts (Inter) |
+| Base de datos | PostgreSQL (Neon) |
+| HTTP client (mobile/desktop) | Retrofit + OkHttp + Gson |
+| Gráficas (Android) | Vico |
+| Gráficas (Desktop) | Compose Canvas |
+
+---
+
+## Cómo ejecutar
+
+### Backend
+
+```bash
+cd back
+uv sync
+uv run python manage.py migrate
+uv run python manage.py runserver
+```
+
+### Android
+
+```bash
+cd android
+./gradlew assembleDebug   # Build debug APK
+./gradlew installDebug     # Build + install on device
+```
+
+Emulador usa `10.0.2.2:8000` como API host. Dispositivo físico: cambia `ApiConstants.kt`.
+
+### Desktop
+
+```bash
+cd desktop
+export JAVA_HOME=/tmp/jdk-17.0.2  # Gradle 8.11.1 requires JDK 17
+./gradlew run
+```
 
 ---
 
@@ -58,56 +76,51 @@ La lógica de negocio vive en `services.py`. Los `views.py` solo reciben la peti
 
 ```
 back/
-  usuarios/
-    models.py        # Usuario personalizado
-    serializers.py   # Validación de entrada/salida
-    services.py      # Lógica: registro, logout
-    views.py         # Delega a services.py
-  transactions/
-    models.py        # Category, Transaction
-    serializers.py
-    services.py      # CategoryService, TransactionService
-    views.py         # ViewSets delgados
+  usuarios/         # Auth (register, login, profile, change-password)
+  transactions/     # Categories + Transactions CRUD + Summary
+  budgets/          # Budget management
+  facturas/         # Invoices CRUD
 ```
 
-### Frontend — Clean Architecture (feature-first)
+### Android — Clean Architecture + MVVM + Hilt
 
 ```
-pro_finanzas/lib/
+android/app/src/main/java/com/profinanzas/
   core/
-    api/             # ApiClient (Dio), ApiConstants
-    errors/          # Jerarquía de excepciones
-    shell/           # MainShell (navegación 5 tabs)
-    theme/           # AppColors, AppTextStyles, AppTheme
-    utils/           # CurrencyFormatter, DateFormatter
-    widgets/         # Componentes reutilizables
+    api/             → Retrofit ApiService, AuthInterceptor
+    data/            → DTOs, Repository implementations
+    domain/          → Entities, Repository interfaces, UseCases
+    ui/              → Theme, Navigation, Reusable components
   features/
-    auth/            # Login, registro, JWT
-    transactions/    # CRUD de transacciones y categorías
-    dashboard/       # Pantalla principal
-    scanner/         # Escáner de facturas
-    analytics/       # Estadísticas y gráficas
-    wallet/          # Billeteras y tarjetas
+    auth/            → Login, Register, Profile
+    transactions/    → CRUD + summary + filters
+    categories/      → CRUD + type filtering
+    dashboard/       → Balance card, budget progress, expense breakdown
+    scanner/         → CameraX + ML Kit OCR
+    analytics/       → Bar charts, KPIs, category breakdown
+    wallet/          → Local card storage (DataStore)
+  di/                → Hilt modules
 ```
 
-Cada feature sigue tres capas:
+### Desktop — Kotlin/JVM + Compose Desktop + Manual DI
 
 ```
-Domain       →  entidades, repositorios abstractos, use cases
-Data         →  datasources HTTP, modelos JSON, implementación
-Presentation →  Provider (estado) + Screens + Widgets
+desktop/src/main/kotlin/com/profinanzas/
+  core/
+    api/             → Retrofit ApiService, AuthInterceptor
+    data/            → DTOs, Repository implementations
+    domain/          → Entities, Repository interfaces, UseCases
+    ui/              → Theme, Reusable components
+  features/
+    auth/            → Login, Register, Profile
+    dashboard/       → Balance card, charts, recent transactions
+    facturas/        → Invoice table + filters + detail panel
+    wallet/          → Card storage + budget progress
+    transactions/    → CRUD + category picker
+    categories/      → CRUD + type filtering
+  ui/navigation/     → Sidebar + TopBar + NavGraph
+  di/                → Manual DI (AppModule)
 ```
-
----
-
-## Sistema de diseño
-
-- **Color primario:** Navy blue `#1A237E`
-- **Ingresos:** Verde `#2E7D32` · **Gastos:** Rojo `#C62828`
-- **Tipografía:** Inter — 3 escalas: Headline / Body / Label
-- **Cards:** Border-radius 16, fondo blanco, borde sutil
-- **Navegación:** Bottom nav con FAB central (escáner)
-- **Botones:** 4 variantes — Primary, Secondary, Inverted, Outlined
 
 ---
 
@@ -118,41 +131,22 @@ Presentation →  Provider (estado) + Screens + Widgets
 | POST | `/api/auth/register/` | Registro de usuario |
 | POST | `/api/auth/login/` | Login → tokens JWT |
 | POST | `/api/auth/logout/` | Invalidar refresh token |
+| POST | `/api/auth/token/refresh/` | Renovar access token |
+| GET/PUT/PATCH | `/api/auth/profile/` | Ver / actualizar perfil |
+| POST | `/api/auth/change-password/` | Cambiar contraseña |
 | GET/POST | `/api/transactions/` | Listar / crear transacciones |
 | GET | `/api/transactions/summary/` | Resumen financiero del período |
 | GET/POST | `/api/categories/` | Listar / crear categorías |
-
----
-
-## Cómo ejecutar
-
-### Backend
-
-```bash
-cd back
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-### Frontend
-
-```bash
-cd pro_finanzas
-flutter pub get
-flutter run -d edge        # Navegador web
-flutter run -d windows     # Escritorio Windows
-flutter run                # Dispositivo/emulador conectado
-```
-
-> Para web y desktop, actualiza `baseUrl` en `lib/core/api/api_constants.dart` apuntando a `http://localhost:8000/api/`.
+| GET/POST | `/api/budgets/` | Listar / crear presupuestos |
+| GET/POST | `/api/invoices/` | Listar / crear facturas |
 
 ---
 
 ## Convenciones de código
 
 - Archivos y directorios: `snake_case` · Clases: `PascalCase`
-- Montos financieros: siempre `double`, mostrar con `CurrencyFormatter.format()`
+- Montos financieros: siempre `double`, formatear con locale `es-CO`
 - Tipos de transacción: `'INCOME'` / `'EXPENSE'` (mayúsculas, igual que el backend)
 - Lógica de negocio en Django: siempre en `services.py`, nunca directamente en `views.py`
-- Llamadas HTTP en Flutter: solo desde la capa `data/datasources/`, nunca desde Screens
+- Android: ViewModel + StateFlow, Hilt DI, Jetpack Compose
+- Desktop: Plain class + CoroutineScope, manual DI, Compose Desktop

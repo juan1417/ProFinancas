@@ -1,3 +1,45 @@
-## estructura de trabajo
+# Backend — ProFinanzas
 
-Se utuliza uv para gestionar el uso de dependencias y la ejecución de tareas. Para instalar uv, puedes seguir las instrucciones. Primero se utulizara o se creara los tests para despues crear el codigo necesario para que los tests pasen. pienso utilizar pytest para la creacion de los tests y django para el desarrollo de la aplicacion basando en la arquitectura hexagonal este se adaptara a la arquitectura de django para que se pueda integrar de manera sencilla con el framework.
+Django 6 + Django REST Framework API for the ProFinanzas personal finance platform.
+
+## Setup
+
+```bash
+cd back
+uv sync
+uv run python manage.py migrate
+uv run python manage.py runserver
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+- `SECRET_KEY` — Django secret key
+- `DEBUG` — `True` for development, `False` for production
+- `URLDB` — PostgreSQL connection string (Neon format)
+- `ALLOWED_HOSTS` — Comma-separated hostnames
+
+## Running Tests
+
+```bash
+uv run pytest
+```
+
+Tests use `pytest-django` with SQLite in-memory (`settings_test.py`). No running Postgres needed.
+
+## Apps
+
+| App | Purpose | Endpoints |
+|---|---|---|
+| `usuarios/` | User auth | `/api/auth/*` |
+| `transactions/` | Categories + Transactions | `/api/categories/*`, `/api/transactions/*` |
+| `budgets/` | Budget management | `/api/budgets/*` |
+| `facturas/` | Invoice management | `/api/invoices/*` |
+
+## Architecture
+
+- Service Layer + Thin Views: business logic in `services.py`, views only delegate
+- Custom User model with UUID primary key and email-based authentication
+- JWT authentication with refresh token rotation and blacklisting
+- Rate limiting on auth endpoints

@@ -31,6 +31,7 @@ fun MainShell(
     authUiState: AuthUiState,
     onLogout: () -> Unit,
     onNavigateToLogin: () -> Unit,
+    onUpdateProfile: (firstName: String, lastName: String, username: String) -> Unit = { _, _, _ -> },
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -54,6 +55,7 @@ fun MainShell(
                 onLogout()
             },
             onNavigateBack = { showProfile = false },
+            onUpdateProfile = onUpdateProfile,
         )
     } else {
         Scaffold(

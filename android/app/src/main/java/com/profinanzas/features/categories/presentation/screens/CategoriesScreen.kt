@@ -25,6 +25,7 @@ fun CategoriesScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var showCreateSheet by remember { mutableStateOf(false) }
+    var editingCategory by remember { mutableStateOf<Category?>(null) }
     val tabs = listOf("Todos", "Ingresos", "Gastos")
 
     LazyColumn(
@@ -50,7 +51,7 @@ fun CategoriesScreen(
         items(filteredCategories) { category ->
             CategoryTile(
                 category = category,
-                onEdit = { /* TODO: open edit sheet */ },
+                onEdit = { editingCategory = category },
                 onDelete = { viewModel.delete(category.id) },
             )
         }
@@ -66,6 +67,17 @@ fun CategoriesScreen(
             onCreate = { name, type, description ->
                 viewModel.create(name, type, description)
                 showCreateSheet = false
+            },
+        )
+    }
+
+    editingCategory?.let { category ->
+        EditCategorySheet(
+            category = category,
+            onDismiss = { editingCategory = null },
+            onSave = { name, type, description ->
+                viewModel.update(category.id, name, type, description)
+                editingCategory = null
             },
         )
     }
@@ -184,6 +196,69 @@ fun CreateCategorySheet(
                 enabled = name.length >= 3,
             ) {
                 Text("Crear Categoría")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditCategorySheet(
+    category: Category,
+    onDismiss: () -> Unit,
+    onSave: (name: String, type: String, description: String?) -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("Editar Categoría", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+
+            var name by remember { mutableStateOf(category.name) }
+            var type by remember { mutableStateOf(category.type) }
+            var description by remember { mutableStateOf(category.description ?: "") }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = type == "EXPENSE",
+                    onClick = { type = "EXPENSE" },
+                    label = { Text("Gasto") },
+                )
+                FilterChip(
+                    selected = type == "INCOME",
+                    onClick = { type = "INCOME" },
+                    label = { Text("Ingreso") },
+                )
+            }
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nombre (mín. 3 caracteres)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Descripción (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3,
+            )
+
+            Button(
+                onClick = { onSave(name, type, description.ifBlank { null }) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                enabled = name.length >= 3,
+            ) {
+                Text("Guardar Cambios")
             }
         }
     }

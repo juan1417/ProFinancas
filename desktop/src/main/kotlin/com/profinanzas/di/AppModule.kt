@@ -72,6 +72,7 @@ object AppModule {
     val logoutUseCase by lazy { LogoutUseCase(authRepository) }
     val listCategoriesUseCase by lazy { ListCategoriesUseCase(categoryRepository) }
     val createCategoryUseCase by lazy { CreateCategoryUseCase(categoryRepository) }
+    val updateCategoryUseCase by lazy { UpdateCategoryUseCase(categoryRepository) }
     val deleteCategoryUseCase by lazy { DeleteCategoryUseCase(categoryRepository) }
     val getTransactionsUseCase by lazy { GetTransactionsUseCase(transactionRepository) }
     val createTransactionUseCase by lazy { CreateTransactionUseCase(transactionRepository) }

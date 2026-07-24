@@ -110,10 +110,10 @@ class ScannerViewModel @Inject constructor(
         for (pattern in totalPatterns) {
             val match = pattern.findAll(text).firstOrNull()
             if (match != null) {
-                val valueStr = match.groupValues.last().replace(",", "").replace(".", "")
-                val value = valueStr.toDoubleOrNull()
+                val raw = match.groupValues.last().trim()
+                val value = parseLocaleNumber(raw)
                 if (value != null && value > total) {
-                    total = value / 100.0
+                    total = value
                 }
             }
         }
@@ -121,6 +121,23 @@ class ScannerViewModel @Inject constructor(
         val merchant = text.lines().firstOrNull { it.length in 3..50 && !it.contains(Regex("\\d{4}")) }
 
         return ScannedInvoice(total = total, merchant = merchant, rawText = text)
+    }
+
+    private fun parseLocaleNumber(s: String): Double? {
+        val cleaned = s.trim()
+        if (cleaned.isEmpty()) return null
+        val lastComma = cleaned.lastIndexOf(',')
+        val lastDot = cleaned.lastIndexOf('.')
+        val decimalSep = when {
+            lastComma > lastDot -> ','
+            lastDot > lastComma -> '.'
+            else -> return cleaned.toDoubleOrNull()
+        }
+        val thousandsSep = if (decimalSep == ',') '.' else ','
+        val result = cleaned
+            .replace(thousandsSep.toString(), "")
+            .replace(decimalSep, '.')
+        return result.toDoubleOrNull()
     }
 
     fun clearResult() {

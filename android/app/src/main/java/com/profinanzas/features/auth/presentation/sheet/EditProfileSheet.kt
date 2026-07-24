@@ -12,13 +12,15 @@ import com.profinanzas.core.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileSheet(
-    currentName: String,
-    currentEmail: String,
+    currentFirstName: String,
+    currentLastName: String,
+    currentUsername: String,
     onDismiss: () -> Unit,
-    onSave: () -> Unit,
+    onSave: (firstName: String, lastName: String, username: String) -> Unit,
 ) {
-    var name by remember { mutableStateOf(currentName) }
-    var email by remember { mutableStateOf(currentEmail) }
+    var firstName by remember { mutableStateOf(currentFirstName) }
+    var lastName by remember { mutableStateOf(currentLastName) }
+    var username by remember { mutableStateOf(currentUsername) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -43,10 +45,10 @@ fun EditProfileSheet(
             Text("Editar perfil", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
 
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
+                value = firstName,
+                onValueChange = { firstName = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Nombre completo") },
+                label = { Text("Nombre") },
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Border,
                     focusedBorderColor = Accent,
@@ -58,10 +60,25 @@ fun EditProfileSheet(
             )
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = lastName,
+                onValueChange = { lastName = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Correo electrónico") },
+                label = { Text("Apellido") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Border,
+                    focusedBorderColor = Accent,
+                    cursorColor = Accent,
+                    unfocusedContainerColor = Surface,
+                    focusedContainerColor = Surface,
+                ),
+                singleLine = true,
+            )
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Nombre de usuario") },
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Border,
                     focusedBorderColor = Accent,
@@ -81,9 +98,10 @@ fun EditProfileSheet(
                     Text("Cancelar")
                 }
                 Button(
-                    onClick = onSave,
+                    onClick = { onSave(firstName, lastName, username) },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    enabled = username.isNotBlank(),
                 ) {
                     Text("Guardar")
                 }

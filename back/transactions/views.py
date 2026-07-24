@@ -87,12 +87,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    VALID_PERIODS = {'week', 'month', 'year'}
+
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """GET /transactions/summary/"""
+        period = request.query_params.get('period', 'month')
+        if period not in self.VALID_PERIODS:
+            return Response(
+                {'error': f"Periodo inválido. Valores permitidos: {', '.join(sorted(self.VALID_PERIODS))}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         data = TransactionService.get_summary(
             self.get_queryset(),
-            period=request.query_params.get('period', 'month'),
+            period=period,
             start_date=request.query_params.get('start_date'),
             end_date=request.query_params.get('end_date'),
         )

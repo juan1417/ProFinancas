@@ -23,3 +23,10 @@ class LogoutUseCase @Inject constructor(
     suspend operator fun invoke(refreshToken: String) =
         repository.logout(refreshToken)
 }
+
+class UpdateProfileUseCase @Inject constructor(
+    private val repository: AuthRepository,
+) {
+    suspend operator fun invoke(firstName: String?, lastName: String?, username: String?) =
+        repository.updateProfile(firstName, lastName, username)
+}

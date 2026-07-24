@@ -4,6 +4,7 @@ import com.profinanzas.core.domain.model.Category
 import com.profinanzas.core.domain.usecase.category.CreateCategoryUseCase
 import com.profinanzas.core.domain.usecase.category.DeleteCategoryUseCase
 import com.profinanzas.core.domain.usecase.category.ListCategoriesUseCase
+import com.profinanzas.core.domain.usecase.category.UpdateCategoryUseCase
 import com.profinanzas.di.AppModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ data class CategoriesUiState(
 class CategoriesViewModel(
     private val listCategories: ListCategoriesUseCase = AppModule.listCategoriesUseCase,
     private val createCategoryUseCase: CreateCategoryUseCase = AppModule.createCategoryUseCase,
+    private val updateCategoryUseCase: UpdateCategoryUseCase = AppModule.updateCategoryUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase = AppModule.deleteCategoryUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -49,6 +51,14 @@ class CategoriesViewModel(
     fun createCategory(name: String, type: String, description: String?) {
         scope.launch {
             createCategoryUseCase(name, type, description)
+                .onSuccess { loadCategories(_uiState.value.selectedType) }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message) }
+        }
+    }
+
+    fun updateCategory(id: Int, name: String, type: String, description: String?) {
+        scope.launch {
+            updateCategoryUseCase(id, name, type, description)
                 .onSuccess { loadCategories(_uiState.value.selectedType) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message) }
         }

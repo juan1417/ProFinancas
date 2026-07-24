@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.profinanzas.core.data.model.InvoiceCreateRequest
 import com.profinanzas.core.ui.formatDate
 import com.profinanzas.core.ui.components.AppCard
 import com.profinanzas.core.ui.components.StatusPill
@@ -25,6 +26,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val filteredInvoices = viewModel.getFilteredInvoices()
     val filters = listOf("Todas", "Pendientes", "Pagadas", "Vencidas")
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -209,7 +211,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = {},
+                        onClick = { showEditDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = Accent),
                         modifier = Modifier.weight(1f),
                     ) {
@@ -225,7 +227,107 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                 }
             }
         }
+
+        uiState.selectedInvoice?.let { invoice ->
+            if (showEditDialog) {
+                EditInvoiceDialog(
+                    invoice = invoice,
+                    onDismiss = { showEditDialog = false },
+                    onSave = { provider, amount, status, category, dueDate, notes ->
+                        viewModel.updateInvoice(
+                            invoice.id,
+                            InvoiceCreateRequest(
+                                provider = provider,
+                                amount = amount,
+                                status = status,
+                                category = category,
+                                dueDate = dueDate,
+                                registeredDate = invoice.registeredDate,
+                                paidDate = invoice.paidDate,
+                                notes = notes,
+                            )
+                        )
+                        showEditDialog = false
+                    }
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun EditInvoiceDialog(
+    invoice: com.profinanzas.core.domain.model.Invoice,
+    onDismiss: () -> Unit,
+    onSave: (provider: String, amount: Double, status: String, category: String, dueDate: String, notes: String) -> Unit,
+) {
+    var provider by remember { mutableStateOf(invoice.provider) }
+    var amount by remember { mutableStateOf(invoice.amount.toString()) }
+    var status by remember { mutableStateOf(invoice.status) }
+    var category by remember { mutableStateOf(invoice.category) }
+    var dueDate by remember { mutableStateOf(invoice.dueDate) }
+    var notes by remember { mutableStateOf(invoice.notes) }
+
+    val statuses = listOf("PENDING", "PAID", "OVERDUE")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Factura", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = provider,
+                    onValueChange = { provider = it },
+                    label = { Text("Proveedor") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Monto") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = dueDate,
+                    onValueChange = { dueDate = it },
+                    label = { Text("Vencimiento (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text("Estado", style = MaterialTheme.typography.labelMedium, color = Muted)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    statuses.forEach { s ->
+                        FilterChip(
+                            selected = status == s,
+                            onClick = { status = s },
+                            label = { Text(s.replaceFirstChar { it.uppercase() }) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notas") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val parsedAmount = amount.toDoubleOrNull() ?: invoice.amount
+                    onSave(provider, parsedAmount, status, category, dueDate, notes)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+    )
 }
 
 @Composable

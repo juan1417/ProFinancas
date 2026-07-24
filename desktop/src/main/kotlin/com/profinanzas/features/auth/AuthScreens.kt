@@ -281,9 +281,9 @@ fun ProfileScreen(
                 HorizontalDivider(color = Border)
 
                 listOf(
-                    "Notificaciones" to Icons.Default.Notifications,
-                    "Modo oscuro" to Icons.Default.DarkMode,
                     "Moneda" to Icons.Default.AttachMoney,
+                    "Zona horaria" to Icons.Default.Schedule,
+                    "Idioma" to Icons.Default.Language,
                 ).forEach { (label, icon) ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -294,13 +294,15 @@ fun ProfileScreen(
                             Icon(icon, contentDescription = null, tint = Muted)
                             Text(label, color = Fg)
                         }
-                        Switch(
-                            checked = label == "Modo oscuro",
-                            onCheckedChange = {},
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Accent,
-                                uncheckedTrackColor = Neutral300,
-                            ),
+                        Text(
+                            when (label) {
+                                "Moneda" -> "COP (Colombiano)"
+                                "Zona horaria" -> "America/Bogota"
+                                "Idioma" -> "Español"
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Muted,
                         )
                     }
                 }

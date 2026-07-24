@@ -46,6 +46,7 @@ fun AnalyticsScreen(
 
         // KPI Row
         val summary = uiState.summary
+        val totalTransactions = summary?.transactionCount ?: 0
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -58,7 +59,13 @@ fun AnalyticsScreen(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                PercentageBadge(percentage = 8.2)
+                if (totalTransactions > 0) {
+                    Text(
+                        "${summary?.byCategory?.filter { it.categoryType == "INCOME" }?.size ?: 0} categorías",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Neutral600,
+                    )
+                }
             }
             AppCard(modifier = Modifier.weight(1f)) {
                 Text("Gastos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
@@ -68,7 +75,13 @@ fun AnalyticsScreen(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                PercentageBadge(percentage = -3.1)
+                if (totalTransactions > 0) {
+                    Text(
+                        "${summary?.byCategory?.filter { it.categoryType == "EXPENSE" }?.size ?: 0} categorías",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Neutral600,
+                    )
+                }
             }
         }
 
@@ -80,7 +93,13 @@ fun AnalyticsScreen(
                 fontWeight = FontWeight.ExtraBold,
                 style = MaterialTheme.typography.headlineMedium,
             )
-            PercentageBadge(percentage = 12.4)
+            if (totalTransactions > 0) {
+                Text(
+                    "$totalTransactions transacciones",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Neutral600,
+                )
+            }
         }
 
         // Bar Chart

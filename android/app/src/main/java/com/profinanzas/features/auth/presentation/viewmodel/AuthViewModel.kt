@@ -27,6 +27,7 @@ class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
     private val logoutUseCase: LogoutUseCase,
+    private val updateProfileUseCase: UpdateProfileUseCase,
     private val tokenManager: TokenManager,
     private val authInterceptor: AuthInterceptor,
 ) : ViewModel() {
@@ -120,5 +121,26 @@ class AuthViewModel @Inject constructor(
 
     fun clearSuccess() {
         _uiState.value = _uiState.value.copy(successMessage = null)
+    }
+
+    fun updateProfile(firstName: String?, lastName: String?, username: String?) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            updateProfileUseCase(firstName, lastName, username)
+                .onSuccess { user ->
+                    tokenManager.saveUser(user.id, user.email, user.username)
+                    _uiState.value = _uiState.value.copy(
+                        user = user,
+                        isLoading = false,
+                        successMessage = "Perfil actualizado",
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al actualizar perfil",
+                    )
+                }
+        }
     }
 }
