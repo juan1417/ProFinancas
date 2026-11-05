@@ -8,8 +8,9 @@ __pycache__/
 *.sqlite3
 *.db
 db.sqlite3
-migrations/
 logs/
+# Las migraciones SÍ se versionan (Django necesita aplicarlas en cualquier despliegue).
+# Los caches de Python dentro de migrations/ siguen ignorados por __pycache__/.
 
 # ─── Kotlin / Android ─────────────────────────────────────────────────────────
 android/app/build/
