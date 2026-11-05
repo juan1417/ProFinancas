@@ -25,3 +25,16 @@ DATABASES = {
 
 # Tests make requests against 'testserver' (Django's default test host).
 ALLOWED_HOSTS = ['*']
+
+# Los tests disparan muchas peticiones desde la misma IP (testserver) y el
+# throttling real (5/hora en register) las bloquearia con 429. Se suben los
+# limites en test para no interferir con la suite; la logica de throttling
+# sigue activa en produccion (settings.py).
+REST_FRAMEWORK = {**REST_FRAMEWORK, 'DEFAULT_THROTTLE_RATES': {
+    **REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'],
+    'register': '10000/hour',
+    'login': '10000/min',
+    'refresh': '10000/min',
+    'logout': '10000/min',
+    'change_password': '10000/hour',
+}}

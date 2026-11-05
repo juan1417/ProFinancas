@@ -1,5 +1,8 @@
 from rest_framework import serializers
+from django.utils import timezone
+
 from .models import Invoice
+from .domain.status import effective_status
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
@@ -11,6 +14,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'paid_date', 'notes', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'invoice_number', 'user', 'created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # OVERDUE se deriva de la fecha de vencimiento al leer; no se persiste.
+        data['status'] = effective_status(
+            instance.status, instance.due_date, timezone.localdate(),
+        )
+        return data
 
     def validate(self, data):
         status = data.get('status', self.instance.status if self.instance else None)

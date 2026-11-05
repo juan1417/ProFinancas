@@ -70,6 +70,12 @@ class Invoice(models.Model):
         verbose_name = 'Factura'
         verbose_name_plural = 'Facturas'
         ordering = ['-registered_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'invoice_number'],
+                name='facturas_invoice_user_number_uniq',
+            ),
+        ]
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['user', '-registered_date']),
@@ -78,15 +84,5 @@ class Invoice(models.Model):
     def __str__(self):
         return f'{self.invoice_number} - {self.provider}'
 
-    def save(self, *args, **kwargs):
-        if not self.invoice_number:
-            last = Invoice.objects.filter(user=self.user).order_by('-created_at').first()
-            if last and last.invoice_number.startswith('FAC-'):
-                try:
-                    num = int(last.invoice_number.split('-')[1]) + 1
-                except (IndexError, ValueError):
-                    num = 1
-            else:
-                num = Invoice.objects.filter(user=self.user).count() + 1
-            self.invoice_number = f'FAC-{num:03d}'
-        super().save(*args, **kwargs)
+    # La numeración vive en `facturas/application/invoice_service.py` (regla en
+    # `facturas/domain/numbering.py`). El modelo no contiene reglas de negocio.

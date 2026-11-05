@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from django.db.models import Sum
 from .models import Budget
-from transactions.models import Category, Transaction
+from .domain.rules import validate_budget_category
+from .domain.errors import DomainError
+from .application import queries as budget_queries
 
 
 class BudgetSerializer(serializers.ModelSerializer):
@@ -61,28 +62,21 @@ class BudgetSerializer(serializers.ModelSerializer):
         return data
 
     def get_spent(self, obj):
-        txs = Transaction.objects.filter(
-            user=obj.user,
-            type='EXPENSE',
-            transaction_date__date__gte=obj.start_date,
-            transaction_date__date__lte=obj.end_date,
-        )
-        if obj.category:
-            txs = txs.filter(category=obj.category)
-
-        result = txs.aggregate(total=Sum('amount'))['total']
-        return float(result) if result else 0.0
+        return budget_queries.spent_for_budget(obj)
 
 
 class BudgetCreateSerializer(BudgetSerializer):
     class Meta(BudgetSerializer.Meta):
         fields = [
-            'category', 'amount', 'period', 'start_date', 'end_date', 'spent',
+            'category', 'amount', 'period', 'start_date', 'end_date',
+            'is_active', 'spent',
         ]
 
     def validate_category(self, value):
-        if value and value.type != 'EXPENSE':
-            raise serializers.ValidationError(
-                'La categoría de un presupuesto debe ser de tipo EXPENSE.'
-            )
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        try:
+            validate_budget_category(value, user)
+        except DomainError as exc:
+            raise serializers.ValidationError(str(exc))
         return value

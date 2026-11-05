@@ -4,6 +4,11 @@ from rest_framework_simplejwt.exceptions import TokenError
 from .serializers import UserProfileSerializer
 
 
+def get_client_ip(request) -> str:
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
+
+
 class UserService:
 
     @staticmethod

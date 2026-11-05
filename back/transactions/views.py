@@ -11,7 +11,8 @@ from .serializers import (
     TransactionSerializer,
     TransactionListSerializer,
 )
-from .services import CategoryService, TransactionService
+from .application.reports import CategoryReportService, TransactionReportService
+from .domain.errors import DomainError
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -44,7 +45,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_type(self, request):
         """GET /categories/by_type/"""
-        result = CategoryService.get_by_type(
+        result = CategoryReportService.get_by_type(
             self.get_queryset(),
             category_type=request.query_params.get('type'),
         )
@@ -105,7 +106,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return Response({'error': 'start_date inválido. Formato esperado: YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
         if end_date and not parse_date(end_date):
             return Response({'error': 'end_date inválido. Formato esperado: YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
-        data = TransactionService.get_summary(
+        data = TransactionReportService.get_summary(
             self.get_queryset(),
             period=period,
             start_date=start_date,
@@ -117,13 +118,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def by_category(self, request):
         """GET /transactions/by_category/"""
         try:
-            data = TransactionService.get_by_category(
+            data = TransactionReportService.get_by_category(
                 self.get_queryset(),
                 transaction_type=request.query_params.get('type'),
                 start_date=request.query_params.get('start_date'),
                 end_date=request.query_params.get('end_date'),
             )
-        except ValueError as e:
+        except (ValueError, DomainError) as e:
             # Inverted dates or similar input errors → 400 instead of
             # silently returning an empty list.
             return Response({'detail': str(e)},

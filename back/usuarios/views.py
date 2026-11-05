@@ -12,7 +12,7 @@ from .serializers import (
     UserProfileSerializer,
     ChangePasswordSerializer,
 )
-from .services import UserService
+from .services import UserService, get_client_ip
 
 logger = logging.getLogger('profinanzas.security')
 
@@ -53,14 +53,9 @@ class RegisterView(generics.CreateAPIView):
         logger.info(
             'REGISTER success email=%s ip=%s',
             request.data.get('email', ''),
-            self._get_client_ip(request),
+            get_client_ip(request),
         )
         return Response(data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    def _get_client_ip(request):
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class LoginView(TokenObtainPairView):
@@ -86,24 +81,19 @@ class LoginView(TokenObtainPairView):
             logger.warning(
                 'LOGIN failed email=%s ip=%s',
                 request.data.get('email', ''),
-                self._get_client_ip(request),
+                get_client_ip(request),
             )
             raise
         logger.info(
             'LOGIN success email=%s ip=%s',
             serializer.user.email,
-            self._get_client_ip(request),
+            get_client_ip(request),
         )
         return Response({
             'user': UserProfileSerializer(serializer.user).data,
             'access': serializer.validated_data['access'],
             'refresh': serializer.validated_data['refresh'],
         }, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def _get_client_ip(request):
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class LogoutView(APIView):
@@ -120,16 +110,11 @@ class LogoutView(APIView):
             logger.info(
                 'LOGOUT user=%s ip=%s',
                 request.user.email,
-                self._get_client_ip(request),
+                get_client_ip(request),
             )
             return Response({'detail': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @staticmethod
-    def _get_client_ip(request):
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
@@ -163,14 +148,9 @@ class ChangePasswordView(generics.UpdateAPIView):
         logger.info(
             'CHANGE_PASSWORD user=%s ip=%s',
             request.user.email,
-            self._get_client_ip(request),
+            get_client_ip(request),
         )
         return Response({'detail': 'Contraseña actualizada correctamente.'}, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def _get_client_ip(request):
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 
 class ThrottledTokenRefreshView(TokenRefreshView):

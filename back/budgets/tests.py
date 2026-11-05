@@ -277,3 +277,26 @@ class TestBudgetAPI(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['category'])
+
+    def test_budget_with_another_users_category_is_rejected(self):
+        """No se puede crear un presupuesto con la categoría de otro usuario."""
+        other = User.objects.create_user(
+            username='owner', email='owner@test.com', password='pass123',
+        )
+        other_category = Category.objects.create(
+            name='Ajena', type='EXPENSE', user=other,
+        )
+        url = '/api/budgets/'
+        data = {
+            'category': other_category.id,
+            'amount': '100000.00',
+            'period': 'monthly',
+            'start_date': date.today().replace(day=1).isoformat(),
+            'end_date': date.today().isoformat(),
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('category', response.data)
+        self.assertEqual(Budget.objects.filter(user=self.user).count(), 0)

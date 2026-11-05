@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import Category, Transaction
 from django.utils import timezone
 
+from .domain import rules
+from .domain.errors import DomainError
+from .application import reports as report_service
+
 
 class CategorySerializer(serializers.ModelSerializer):
     """
@@ -86,62 +90,46 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'created_at', 'updated_at', 'category_name', 'category_type']
     
     def validate_amount(self, value):
-        """Validación del monto de la transacción"""
-        if value <= 0:
-            raise serializers.ValidationError(
-                "El monto debe ser mayor que cero"
-            )
-        return value
-    
+        """Validación del monto de la transacción (delegada a domain)."""
+        try:
+            return rules.validate_amount(value)
+        except DomainError as exc:
+            raise serializers.ValidationError(str(exc))
+
     def validate_description(self, value):
-        """Validación de la descripción"""
-        if len(value.strip()) < 3:
-            raise serializers.ValidationError(
-                "La descripción debe tener al menos 3 caracteres"
-            )
-        return value.strip()
-    
+        """Validación de la descripción (delegada a domain)."""
+        try:
+            return rules.validate_description(value)
+        except DomainError as exc:
+            raise serializers.ValidationError(str(exc))
+
     def validate_transaction_date(self, value):
-        """Validación de la fecha de transacción"""
-        # Asegurar que ambos valores sean timezone-aware para comparación
+        """Validación de la fecha de transacción (delegada a domain)."""
         now = timezone.now()
-        # Si value es naive, hacerlo aware
-        if timezone.is_naive(value):
-            value = timezone.make_aware(value)
-        
-        if value > now:
-            raise serializers.ValidationError(
-                "La fecha de la transacción no puede ser futura"
-            )
-        return value
-    
+        try:
+            return rules.validate_transaction_date(value, now)
+        except DomainError as exc:
+            raise serializers.ValidationError(str(exc))
+
     def validate(self, data):
         """
-        Validación a nivel de objeto para asegurar consistencia
-        entre el tipo de transacción y la categoría
+        Validación a nivel de objeto: pertenencia, tipo y estado de la categoría.
+        Delegada a `transactions.domain.rules`.
         """
         category = data.get('category') or (self.instance.category if self.instance else None)
-        transaction_type = data.get('type')
+        # En un PATCH puede venir solo `category`: el `type` efectivo es el
+        # guardado. Sin este fallback la validación de coincidencia se salta
+        # y la transacción queda con type != category.type.
+        transaction_type = data.get('type') or (self.instance.type if self.instance else None)
         user = self.context['request'].user
-        
-        # Validar que la categoría pertenezca al usuario
-        if category and user and category.user != user:
-            raise serializers.ValidationError({
-                'category': 'La categoría debe pertenecer al usuario de la transacción'
-            })
-        
-        # Validar que el tipo de transacción coincida con el tipo de categoría
-        if category and transaction_type and category.type != transaction_type:
-            raise serializers.ValidationError({
-                'type': f'El tipo de transacción debe coincidir con el tipo de categoría ({category.get_type_display()})'
-            })
-        
-        # Validar que la categoría esté activa
-        if category and not category.is_active:
-            raise serializers.ValidationError({
-                'category': 'No se puede crear una transacción con una categoría inactiva'
-            })
-        
+
+        try:
+            rules.validate_category_assignment(category, transaction_type, user)
+        except DomainError as exc:
+            raise serializers.ValidationError(
+                {exc.field: str(exc)} if exc.field else {'non_field_errors': str(exc)}
+            )
+
         return data
 
 

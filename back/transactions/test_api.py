@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, time, timedelta
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.utils import timezone
@@ -410,3 +411,122 @@ class TestTransactionAPI(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(float(response.data[0]['total_amount']), 250.0)
         self.assertEqual(response.data[0]['transaction_count'], 2)
+
+
+@pytest.mark.django_db
+class TestTransactionRegressionsF0(APITestCase):
+    """Regresiones de la auditoría, escritas ANTES de tocar producción.
+
+    Con el código actual estos tests fallan exactamente en los defectos
+    conocidos (PATCH que desincroniza type/category, end_date exclusivo,
+    fecha malformada que devuelve 500). Deben pasar tras el arreglo.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='f0user',
+            email='f0@example.com',
+            password='testpass123',
+        )
+        self.expense_category = Category.objects.create(
+            name='Mercado', type='EXPENSE', user=self.user,
+        )
+        self.income_category = Category.objects.create(
+            name='Nomina', type='INCOME', user=self.user,
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def _create_expense(self, amount='40.00', when=None):
+        return Transaction.objects.create(
+            user=self.user,
+            category=self.expense_category,
+            type='EXPENSE',
+            amount=Decimal(amount),
+            description='Compra de prueba',
+            transaction_date=when or timezone.now(),
+        )
+
+    def test_patch_category_only_cannot_desync_type(self):
+        """Cambiar solo la categoría debe evaluar el type ya guardado."""
+        transaction = self._create_expense()
+        url = f'/api/transactions/{transaction.id}/'
+
+        response = self.client.patch(
+            url, {'category': self.income_category.id}, format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('type', response.data)
+        transaction.refresh_from_db()
+        self.assertEqual(transaction.category_id, self.expense_category.id)
+        self.assertEqual(transaction.type, 'EXPENSE')
+
+    def test_patch_type_only_mismatch_still_rejected(self):
+        """Comportamiento que ya funciona y no debe romperse."""
+        transaction = self._create_expense()
+        url = f'/api/transactions/{transaction.id}/'
+
+        response = self.client.patch(url, {'type': 'INCOME'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('type', response.data)
+
+    def test_summary_end_date_includes_the_whole_last_day(self):
+        """Un movimiento a las 23:59 del end_date debe contar."""
+        target_day = timezone.localdate() - timedelta(days=1)
+        late_transaction = timezone.make_aware(
+            datetime.combine(target_day, time(23, 59)),
+        )
+        self._create_expense(amount='40.00', when=late_transaction)
+
+        url = (
+            '/api/transactions/summary/'
+            f'?start_date={target_day.isoformat()}'
+            f'&end_date={target_day.isoformat()}'
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['transaction_count'], 1)
+        self.assertEqual(response.data['total_expenses'], 40.0)
+
+    def test_by_category_end_date_includes_the_whole_last_day(self):
+        """Mismo criterio inclusivo en el agrupado por categoría."""
+        target_day = timezone.localdate() - timedelta(days=1)
+        late_transaction = timezone.make_aware(
+            datetime.combine(target_day, time(23, 59)),
+        )
+        self._create_expense(amount='40.00', when=late_transaction)
+
+        url = (
+            '/api/transactions/by_category/'
+            f'?start_date={target_day.isoformat()}'
+            f'&end_date={target_day.isoformat()}'
+        )
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(float(response.data[0]['total_amount']), 40.0)
+        self.assertEqual(response.data[0]['transaction_count'], 1)
+
+    def test_by_category_malformed_start_date_returns_400(self):
+        """Una fecha inválida es error del cliente, no un 500."""
+        self.client.raise_request_exception = False
+
+        response = self.client.get(
+            '/api/transactions/by_category/?start_date=not-a-date',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_summary_malformed_start_date_returns_400(self):
+        """Comportamiento que ya funciona y no debe romperse."""
+        self.client.raise_request_exception = False
+
+        response = self.client.get(
+            '/api/transactions/summary/?start_date=not-a-date',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
