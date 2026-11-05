@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.profinanzas.core.domain.model.Category
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.components.SegmentedTabs
 import com.profinanzas.core.ui.theme.*
 import com.profinanzas.features.categories.presentation.viewmodel.CategoryViewModel
@@ -45,6 +46,10 @@ fun CategoriesScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        item {
+            ErrorBanner(message = uiState.error, onDismiss = viewModel::clearError)
+        }
+
         item {
             SegmentedTabs(
                 options = tabs,

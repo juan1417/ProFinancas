@@ -50,6 +50,10 @@ class FacturasViewModel @Inject constructor(
         }
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
     fun setFilter(filter: String) {
         _uiState.value = _uiState.value.copy(selectedFilter = filter)
     }

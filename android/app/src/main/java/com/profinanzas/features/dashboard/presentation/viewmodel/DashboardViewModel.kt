@@ -58,8 +58,11 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun loadRecentTransactions() {
-        viewModelScope.launch {
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    private fun loadRecentTransactions() {        viewModelScope.launch {
             getTransactions()
                 .onSuccess { transactions ->
                     _uiState.value = _uiState.value.copy(

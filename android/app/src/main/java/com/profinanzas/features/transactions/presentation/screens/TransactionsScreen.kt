@@ -38,76 +38,115 @@ fun TransactionsScreen(
         viewModel.loadTransactions(type = type)
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // Summary strip
-        item {
-            val summary = uiState.summary
-            AppCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column {
-                        Text("Ingresos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
-                        Text(currencyFormat.format(summary?.totalIncome ?: 0.0), color = IncomeGreen, fontWeight = FontWeight.Bold)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Transacciones", style = MaterialTheme.typography.labelSmall, color = Neutral600)
-                        Text("${summary?.transactionCount ?: 0}", fontWeight = FontWeight.Bold)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Gastos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
-                        Text(currencyFormat.format(summary?.totalExpenses ?: 0.0), color = ExpenseRed, fontWeight = FontWeight.Bold)
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Error visible: antes se perdía y la pantalla quedaba vacía.
+            uiState.error?.let { message ->
+                item {
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = message,
+                                color = ExpenseRed,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { viewModel.clearError() }) {
+                                Text("Cerrar")
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        // Tabs
-        item {
-            SegmentedTabs(
-                options = tabs,
-                selectedIndex = selectedTab,
-                onSelected = { selectedTab = it },
-            )
-        }
-
-        // Transaction list
-        items(uiState.transactions) { transaction ->
-            AppCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        if (transaction.isIncome) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
-                        contentDescription = null,
-                        tint = if (transaction.isIncome) IncomeGreen else ExpenseRed,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(transaction.description, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                        Text(transaction.categoryName ?: "", style = MaterialTheme.typography.bodySmall, color = Neutral600)
+            // Summary strip
+            item {
+                val summary = uiState.summary
+                AppCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text("Ingresos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
+                            Text(currencyFormat.format(summary?.totalIncome ?: 0.0), color = IncomeGreen, fontWeight = FontWeight.Bold)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Transacciones", style = MaterialTheme.typography.labelSmall, color = Neutral600)
+                            Text("${summary?.transactionCount ?: 0}", fontWeight = FontWeight.Bold)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Gastos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
+                            Text(currencyFormat.format(summary?.totalExpenses ?: 0.0), color = ExpenseRed, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    Text(
-                        text = "${if (transaction.isIncome) "+" else "-"}${currencyFormat.format(transaction.amount)}",
-                        color = if (transaction.isIncome) IncomeGreen else ExpenseRed,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
                 }
+            }
+
+            // Tabs
+            item {
+                SegmentedTabs(
+                    options = tabs,
+                    selectedIndex = selectedTab,
+                    onSelected = { selectedTab = it },
+                )
+            }
+
+            // Transaction list
+            items(uiState.transactions) { transaction ->
+                AppCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (transaction.isIncome) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
+                            contentDescription = null,
+                            tint = if (transaction.isIncome) IncomeGreen else ExpenseRed,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(transaction.description, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text(transaction.categoryName ?: "", style = MaterialTheme.typography.bodySmall, color = Neutral600)
+                        }
+                        Text(
+                            text = "${if (transaction.isIncome) "+" else "-"}${currencyFormat.format(transaction.amount)}",
+                            color = if (transaction.isIncome) IncomeGreen else ExpenseRed,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+
+            // Espacio para que el FAB no tape la última tarjeta.
+            item {
+                Spacer(modifier = Modifier.height(88.dp))
             }
         }
 
-        // FAB
-        item {
-            Spacer(modifier = Modifier.height(64.dp))
+        FloatingActionButton(
+            onClick = {
+                viewModel.loadCategories("EXPENSE")
+                showAddSheet = true
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp),
+            containerColor = NavyBlue,
+            contentColor = androidx.compose.ui.graphics.Color.White,
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Nueva transacción")
         }
     }
 
@@ -117,8 +156,8 @@ fun TransactionsScreen(
             categories = categories,
             onDismiss = { showAddSheet = false },
             onTypeChange = { viewModel.loadCategories(it) },
-            onCreate = { categoryId, type, amount, description ->
-                viewModel.createTransaction(categoryId, type, amount, description)
+            onCreate = { categoryId, type, amount, description, date ->
+                viewModel.createTransaction(categoryId, type, amount, description, date = date)
                 showAddSheet = false
             },
         )
@@ -131,7 +170,7 @@ fun AddTransactionSheet(
     categories: List<com.profinanzas.core.domain.model.Category>,
     onDismiss: () -> Unit,
     onTypeChange: (String) -> Unit,
-    onCreate: (categoryId: Int, type: String, amount: String, description: String) -> Unit,
+    onCreate: (categoryId: Int, type: String, amount: String, description: String, date: String) -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -147,6 +186,7 @@ fun AddTransactionSheet(
             var amount by remember { mutableStateOf("") }
             var selectedCategory by remember { mutableStateOf<com.profinanzas.core.domain.model.Category?>(null) }
             var categoryExpanded by remember { mutableStateOf(false) }
+            var date by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -222,17 +262,33 @@ fun AddTransactionSheet(
                 singleLine = true,
             )
 
+            val datePattern = remember { Regex("""\d{4}-\d{2}-\d{2}""") }
+            OutlinedTextField(
+                value = date,
+                onValueChange = { date = it },
+                label = { Text("Fecha (YYYY-MM-DD)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = !datePattern.matches(date),
+                supportingText = {
+                    if (!datePattern.matches(date)) {
+                        Text("Usa el formato YYYY-MM-DD", color = ExpenseRed)
+                    }
+                },
+            )
+
             Button(
                 onClick = {
                     selectedCategory?.let { cat ->
-                        onCreate(cat.id, type, amount, description)
+                        onCreate(cat.id, type, amount, description, date)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                enabled = selectedCategory != null && description.isNotBlank() && amount.toDoubleOrNull() != null,
+                enabled = selectedCategory != null && description.isNotBlank() &&
+                    amount.toDoubleOrNull() != null && datePattern.matches(date),
             ) {
                 Text("Crear Transacción")
             }

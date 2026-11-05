@@ -16,7 +16,7 @@ fun PreferencesSheet(
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var darkModeEnabled by remember { mutableStateOf(true) }
-    var currency by remember { mutableStateOf("USD") }
+    var currency by remember { mutableStateOf("COP") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

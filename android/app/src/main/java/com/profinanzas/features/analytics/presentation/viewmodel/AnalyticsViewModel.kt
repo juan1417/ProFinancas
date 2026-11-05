@@ -57,6 +57,13 @@ class AnalyticsViewModel @Inject constructor(
                                 isLoading = false,
                             )
                         }
+                        .onFailure { e ->
+                            // Antes este fallo se perdía y el spinner no paraba.
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                error = e.message,
+                            )
+                        }
                 }
                 .onFailure { e ->
                     _uiState.value = _uiState.value.copy(
@@ -65,6 +72,10 @@ class AnalyticsViewModel @Inject constructor(
                     )
                 }
         }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     private fun computeMonthlyTotals(transactions: List<Transaction>): List<MonthlyData> {

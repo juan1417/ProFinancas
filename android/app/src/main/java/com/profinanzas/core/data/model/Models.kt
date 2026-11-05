@@ -10,6 +10,8 @@ data class AuthResponse(
 
 data class TokenRefreshResponse(
     val access: String,
+    // El backend rota el refresh token (ROTATE_REFRESH_TOKENS=True).
+    val refresh: String? = null,
 )
 
 data class UserDto(

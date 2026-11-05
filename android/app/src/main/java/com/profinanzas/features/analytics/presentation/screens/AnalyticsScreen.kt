@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.components.PercentageBadge
 import com.profinanzas.core.ui.components.SegmentedTabs
 import com.profinanzas.core.ui.theme.*
@@ -43,6 +44,8 @@ fun AnalyticsScreen(
             selectedIndex = selectedPeriod,
             onSelected = { selectedPeriod = it },
         )
+
+        ErrorBanner(message = uiState.error)
 
         // KPI Row
         val summary = uiState.summary

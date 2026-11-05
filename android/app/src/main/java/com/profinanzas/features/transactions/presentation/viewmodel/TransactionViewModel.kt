@@ -24,7 +24,7 @@ data class TransactionUiState(
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val getTransactions: GetTransactionsUseCase,
-    private val createTransaction: CreateTransactionUseCase,
+    private val createTransactionUseCase: CreateTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getSummary: GetSummaryUseCase,
     private val listCategories: ListCategoriesUseCase,
@@ -77,11 +77,27 @@ class TransactionViewModel @Inject constructor(
         amount: String,
         description: String,
         notes: String? = null,
+        date: String? = null,
     ) {
         viewModelScope.launch {
-            val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Bogota"))
+            val zone = java.time.ZoneId.of("America/Bogota")
+            val now = java.time.ZonedDateTime.now(zone)
+            // `date` llega como YYYY-MM-DD desde la UI. Si es hoy usamos la
+            // hora actual (el backend rechaza fechas futuras); si es un día
+            // pasado usamos mediodía para no cruzar el límite por zona horaria.
+            val whenValue = date
+                ?.takeIf { it.isNotBlank() }
+                ?.let { raw ->
+                    runCatching { java.time.LocalDate.parse(raw) }.getOrNull()
+                }
+                ?.let { day ->
+                    if (day == now.toLocalDate()) now
+                    else day.atTime(12, 0).atZone(zone)
+                }
+                ?: now
+            val transactionDate = whenValue
                 .format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            createTransaction(categoryId, type, amount, description, notes, now)
+            createTransactionUseCase(categoryId, type, amount, description, notes, transactionDate)
                 .onSuccess { transaction ->
                     _uiState.value = _uiState.value.copy(
                         transactions = listOf(transaction) + _uiState.value.transactions,

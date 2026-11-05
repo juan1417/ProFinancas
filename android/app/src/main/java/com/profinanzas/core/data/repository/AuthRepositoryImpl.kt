@@ -91,10 +91,14 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun refreshToken(refreshToken: String): Result<String> = runCatching {
         val response = api.refreshToken(mapOf("refresh" to refreshToken))
         if (response.isSuccessful) {
-            val token = response.body()!!.access
-            authInterceptor.accessToken = token
-            tokenManager.accessToken = token
-            token
+            val body = response.body()!!
+            authInterceptor.accessToken = body.access
+            tokenManager.accessToken = body.access
+            body.refresh?.let { rotated ->
+                authInterceptor.refreshToken = rotated
+                tokenManager.refreshToken = rotated
+            }
+            body.access
         } else {
             throw Exception(extractError(response.errorBody()?.string()))
         }

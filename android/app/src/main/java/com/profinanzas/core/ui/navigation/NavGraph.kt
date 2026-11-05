@@ -42,6 +42,7 @@ fun MainShell(
         BottomNavItem("Inicio", Icons.Default.Home, Screen.Dashboard.route),
         BottomNavItem("Facturas", Icons.Default.Receipt, Screen.Facturas.route),
         BottomNavItem("Transacciones", Icons.Default.SwapHoriz, Screen.Transactions.route),
+        BottomNavItem("Categorías", Icons.Default.Category, Screen.Categories.route),
         BottomNavItem("Tarjetas", Icons.Default.CreditCard, Screen.Wallet.route),
     )
 

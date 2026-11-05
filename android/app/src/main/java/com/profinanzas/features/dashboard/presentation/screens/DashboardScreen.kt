@@ -132,7 +132,7 @@ fun DashboardScreen(
 
         // ─── Weekly Bar Chart ──────────────────────────────────────────
         item {
-            WeeklyBarChart()
+            WeeklyBarChart(uiState.recentTransactions)
         }
 
         // ─── Recent Transactions + Budget Progress ─────────────────────
@@ -211,10 +211,26 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun WeeklyBarChart() {
-    val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-    val values = listOf(2100.0, 3800.0, 1500.0, 4700.0, 2900.0, 5200.0, 1800.0)
-    val maxValue = values.max()
+private fun WeeklyBarChart(transactions: List<com.profinanzas.core.domain.model.Transaction> = emptyList()) {
+    val today = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota"))
+    val days = (6 downTo 0).map { offset ->
+        today.minusDays(offset.toLong()).dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO"))
+    }
+
+    val dailyExpenses = mutableMapOf<Int, Double>()
+    transactions.filter { it.isExpense }.forEach { tx ->
+        try {
+            val txDate = java.time.LocalDate.parse(tx.transactionDate.substring(0, 10))
+            val daysAgo = java.time.temporal.ChronoUnit.DAYS.between(txDate, today).toInt()
+            if (daysAgo in 0..6) {
+                val idx = 6 - daysAgo
+                dailyExpenses[idx] = (dailyExpenses[idx] ?: 0.0) + tx.amount
+            }
+        } catch (_: Exception) { }
+    }
+
+    val values = (0..6).map { dailyExpenses[it] ?: 0.0 }
+    val maxValue = values.max().coerceAtLeast(1.0)
 
     AppCard {
         Row(
@@ -240,7 +256,7 @@ private fun WeeklyBarChart() {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "$${String.format("%.1f", values[index] / 1000)}k",
+                        text = if (values[index] > 0) "$${String.format("%.1f", values[index] / 1000)}k" else "$0",
                         style = MaterialTheme.typography.labelSmall,
                         color = Muted,
                     )
@@ -253,7 +269,11 @@ private fun WeeklyBarChart() {
                             .background(AccentSoft)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(day, style = MaterialTheme.typography.labelSmall, color = Muted)
+                    Text(
+                        text = day,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Muted,
+                    )
                 }
             }
         }

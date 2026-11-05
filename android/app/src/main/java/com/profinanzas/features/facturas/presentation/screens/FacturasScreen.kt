@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.profinanzas.core.domain.model.Invoice
 import com.profinanzas.core.ui.formatDate
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.components.SegmentedTabs
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
@@ -47,6 +48,8 @@ fun FacturasScreen(
             .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
+
+        ErrorBanner(message = uiState.error, onDismiss = viewModel::clearError)
 
         // Header
         Row(
