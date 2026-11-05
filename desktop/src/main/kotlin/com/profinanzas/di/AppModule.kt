@@ -2,6 +2,7 @@ package com.profinanzas.di
 
 import com.profinanzas.core.api.ApiService
 import com.profinanzas.core.api.AuthInterceptor
+import com.profinanzas.core.api.TokenRefreshAuthenticator
 import com.profinanzas.core.data.local.TokenManager
 import com.profinanzas.core.data.repository.*
 import com.profinanzas.core.domain.repository.*
@@ -26,9 +27,28 @@ object AppModule {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
+        val tokenRefresh = TokenRefreshAuthenticator(
+            authInterceptor = authInterceptor,
+            onTokensRefreshed = { access, refresh ->
+                authInterceptor.accessToken = access
+                if (refresh != null) {
+                    authInterceptor.refreshToken = refresh
+                    tokenManager.saveTokens(access, refresh)
+                } else {
+                    tokenManager.accessToken = access
+                }
+            },
+            onRefreshFailed = {
+                // El refresh ya no sirve: la sesión debe volver al login.
+                authInterceptor.accessToken = null
+                authInterceptor.refreshToken = null
+                tokenManager.clear()
+            },
+        )
         OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
+            .authenticator(tokenRefresh)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)

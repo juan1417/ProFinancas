@@ -30,9 +30,10 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun register(email: String, username: String, password: String): Result<AuthResult> = runCatching {
+    override suspend fun register(email: String, username: String, password: String, passwordConfirm: String): Result<AuthResult> = runCatching {
         val response = api.register(mapOf(
-            "email" to email, "username" to username, "password" to password
+            "email" to email, "username" to username,
+            "password" to password, "password_confirm" to passwordConfirm,
         ))
         if (response.isSuccessful) {
             val body = response.body()!!
@@ -89,10 +90,14 @@ class AuthRepositoryImpl(
     override suspend fun refreshToken(refreshToken: String): Result<String> = runCatching {
         val response = api.refreshToken(mapOf("refresh" to refreshToken))
         if (response.isSuccessful) {
-            val token = response.body()!!.access
-            authInterceptor.accessToken = token
-            tokenManager.accessToken = token
-            token
+            val body = response.body()!!
+            authInterceptor.accessToken = body.access
+            tokenManager.accessToken = body.access
+            body.refresh?.let { rotated ->
+                authInterceptor.refreshToken = rotated
+                tokenManager.refreshToken = rotated
+            }
+            body.access
         } else {
             throw Exception(extractError(response.errorBody()?.string()))
         }

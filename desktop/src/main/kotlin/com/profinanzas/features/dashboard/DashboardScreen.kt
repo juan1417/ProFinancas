@@ -25,6 +25,7 @@ import com.profinanzas.core.domain.model.Transaction
 import com.profinanzas.core.ui.formatRelativeDate
 import com.profinanzas.core.ui.formatMonthYear
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.components.StatusPill
 import com.profinanzas.core.ui.theme.*
 import java.text.NumberFormat
@@ -55,6 +56,11 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
         verticalArrangement = Arrangement.spacedBy(20.dp),
         contentPadding = PaddingValues(vertical = 24.dp),
     ) {
+        // Error de red/validación visible
+        item {
+            ErrorBanner(message = uiState.error, onDismiss = viewModel::clearError)
+        }
+
         // Stats Grid - 4 columns
         item {
             Row(

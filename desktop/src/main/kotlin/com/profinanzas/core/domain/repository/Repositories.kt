@@ -5,7 +5,7 @@ import com.profinanzas.core.domain.model.*
 
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<AuthResult>
-    suspend fun register(email: String, username: String, password: String): Result<AuthResult>
+    suspend fun register(email: String, username: String, password: String, passwordConfirm: String): Result<AuthResult>
     suspend fun logout(refreshToken: String): Result<Unit>
     suspend fun getProfile(): Result<User>
     suspend fun updateProfile(firstName: String?, lastName: String?, username: String?): Result<User>

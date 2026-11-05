@@ -77,10 +77,10 @@ class AuthViewModel(
         }
     }
 
-    fun register(email: String, username: String, password: String) {
+    fun register(email: String, username: String, password: String, passwordConfirm: String) {
         scope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            registerUseCase(email, username, password)
+            registerUseCase(email, username, password, passwordConfirm)
                 .onSuccess { result ->
                     _uiState.value = _uiState.value.copy(
                         user = result.user,

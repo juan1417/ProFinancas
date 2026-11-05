@@ -61,14 +61,37 @@ class TransactionsViewModel(
         }
     }
 
-    fun createTransaction(categoryId: Int, type: String, amount: String, description: String) {
+    fun createTransaction(
+        categoryId: Int,
+        type: String,
+        amount: String,
+        description: String,
+        date: String? = null,
+    ) {
         scope.launch {
-            val now = ZonedDateTime.now(ZoneId.of("America/Bogota"))
+            val zone = ZoneId.of("America/Bogota")
+            val now = ZonedDateTime.now(zone)
+            // `date` llega como YYYY-MM-DD. Hoy usa la hora actual (el backend
+            // rechaza fechas futuras); otro día usa mediodía para no cruzar el
+            // límite por zona horaria.
+            val whenValue = date
+                ?.takeIf { it.isNotBlank() }
+                ?.let { raw -> runCatching { java.time.LocalDate.parse(raw) }.getOrNull() }
+                ?.let { day ->
+                    if (day == now.toLocalDate()) now
+                    else day.atTime(12, 0).atZone(zone)
+                }
+                ?: now
+            val transactionDate = whenValue
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            createTransactionUseCase(categoryId, type, amount, description, null, now)
+            createTransactionUseCase(categoryId, type, amount, description, null, transactionDate)
                 .onSuccess { loadTransactions(_uiState.value.selectedType) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message) }
         }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun deleteTransaction(id: Int) {

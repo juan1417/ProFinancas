@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.profinanzas.core.domain.model.Category
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.theme.*
 
 @Composable
@@ -34,6 +35,8 @@ fun CategoriesScreen(viewModel: CategoriesViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
+
+        ErrorBanner(message = uiState.error, onDismiss = viewModel::clearError)
 
         // Header
         Row(

@@ -35,6 +35,10 @@ class CategoriesViewModel(
         loadCategories()
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
     fun loadCategories(type: String? = null) {
         _uiState.value = _uiState.value.copy(selectedType = type, isLoading = true)
         scope.launch {

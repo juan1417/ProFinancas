@@ -8,8 +8,12 @@ class LoginUseCase(private val repository: AuthRepository) {
 }
 
 class RegisterUseCase(private val repository: AuthRepository) {
-    suspend operator fun invoke(email: String, username: String, password: String) =
-        repository.register(email, username, password)
+    suspend operator fun invoke(
+        email: String,
+        username: String,
+        password: String,
+        passwordConfirm: String,
+    ) = repository.register(email, username, password, passwordConfirm)
 }
 
 class LogoutUseCase(private val repository: AuthRepository) {

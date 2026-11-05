@@ -62,6 +62,27 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
             }
         }
 
+        // Error visible: antes se perdía y la pantalla quedaba vacía.
+        uiState.error?.let { message ->
+            AppCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = message,
+                        color = Danger,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { viewModel.clearError() }) {
+                        Text("Cerrar", color = Muted)
+                    }
+                }
+            }
+        }
+
         // Tabs
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             tabs.forEachIndexed { index, label ->
@@ -138,8 +159,8 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
         CreateTransactionDialog(
             categories = uiState.categories,
             onDismiss = { showCreateDialog = false },
-            onCreate = { categoryId, type, amount, description ->
-                viewModel.createTransaction(categoryId, type, amount, description)
+            onCreate = { categoryId, type, amount, description, date ->
+                viewModel.createTransaction(categoryId, type, amount, description, date)
                 showCreateDialog = false
             },
             onTypeChange = { viewModel.loadCategories(it) },
@@ -152,13 +173,15 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
 private fun CreateTransactionDialog(
     categories: List<com.profinanzas.core.domain.model.Category>,
     onDismiss: () -> Unit,
-    onCreate: (categoryId: Int, type: String, amount: String, description: String) -> Unit,
+    onCreate: (categoryId: Int, type: String, amount: String, description: String, date: String) -> Unit,
     onTypeChange: (String) -> Unit,
 ) {
     var type by remember { mutableStateOf("EXPENSE") }
     var description by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<com.profinanzas.core.domain.model.Category?>(null) }
+    var date by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
+    val datePattern = remember { Regex("""\d{4}-\d{2}-\d{2}""") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -231,16 +254,31 @@ private fun CreateTransactionDialog(
                         }
                     }
                 }
+
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    label = { Text("Fecha (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = !datePattern.matches(date),
+                    supportingText = {
+                        if (!datePattern.matches(date)) {
+                            Text("Usa el formato YYYY-MM-DD", color = Danger)
+                        }
+                    },
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     selectedCategory?.let { cat ->
-                        onCreate(cat.id, type, amount, description)
+                        onCreate(cat.id, type, amount, description, date)
                     }
                 },
-                enabled = selectedCategory != null && description.isNotBlank() && amount.toDoubleOrNull() != null,
+                enabled = selectedCategory != null && description.isNotBlank() &&
+                    amount.toDoubleOrNull() != null && datePattern.matches(date),
             ) {
                 Text("Crear")
             }

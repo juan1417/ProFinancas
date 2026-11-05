@@ -39,6 +39,10 @@ class DashboardViewModel(
         loadBudgets()
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
     fun loadSummary(period: String = "month") {
         scope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)

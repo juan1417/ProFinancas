@@ -55,8 +55,13 @@ class FacturasViewModel {
         _uiState.value = _uiState.value.copy(selectedInvoice = invoice)
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
     fun createInvoice(request: InvoiceCreateRequest) {
         scope.launch {
+            _uiState.value = _uiState.value.copy(error = null)
             AppModule.createInvoiceUseCase(request)
                 .onSuccess { loadInvoices() }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message) }

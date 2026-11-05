@@ -121,6 +121,7 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordConfirm by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) onRegisterSuccess()
@@ -188,15 +189,35 @@ fun RegisterScreen(
                     ),
                 )
 
+                OutlinedTextField(
+                    value = passwordConfirm,
+                    onValueChange = { passwordConfirm = it },
+                    label = { Text("Confirmar contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    isError = passwordConfirm.isNotEmpty() && password != passwordConfirm,
+                    supportingText = {
+                        if (passwordConfirm.isNotEmpty() && password != passwordConfirm) {
+                            Text("Las contraseñas no coinciden", color = Danger)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Accent,
+                        unfocusedBorderColor = Border,
+                        focusedContainerColor = Surface,
+                        unfocusedContainerColor = Surface,
+                    ),
+                )
+
                 uiState.error?.let { error ->
                     Text(text = error, color = Danger, style = MaterialTheme.typography.bodySmall)
                 }
 
                 Button(
-                    onClick = { viewModel.register(email, username, password) },
+                    onClick = { viewModel.register(email, username, password, passwordConfirm) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent),
-                    enabled = !uiState.isLoading,
+                    enabled = !uiState.isLoading && password.length >= 8 && password == passwordConfirm,
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(

@@ -27,6 +27,8 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
     val filteredInvoices = viewModel.getFilteredInvoices()
     val filters = listOf("Todas", "Pendientes", "Pagadas", "Vencidas")
     var showEditDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    val today = java.time.LocalDate.now().toString()
 
     Row(
         modifier = Modifier
@@ -47,11 +49,46 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    text = "${filteredInvoices.size} facturas",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Muted,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "${filteredInvoices.size} facturas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                    Button(
+                        onClick = { showCreateDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Nueva factura")
+                    }
+                }
+            }
+
+            // Errores de red/validación visibles: antes se perdían en el estado.
+            uiState.error?.let { message ->
+                Spacer(modifier = Modifier.height(12.dp))
+                AppCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = message,
+                            color = Danger,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.clearError() }) {
+                            Text("Cerrar", color = Muted)
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -252,6 +289,28 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                 )
             }
         }
+
+        if (showCreateDialog) {
+            CreateInvoiceDialog(
+                today = today,
+                onDismiss = { showCreateDialog = false },
+                onSave = { provider, amount, status, category, dueDate, paidDate, notes ->
+                    viewModel.createInvoice(
+                        InvoiceCreateRequest(
+                            provider = provider,
+                            amount = amount,
+                            status = status,
+                            category = category,
+                            dueDate = dueDate,
+                            registeredDate = today,
+                            paidDate = paidDate,
+                            notes = notes,
+                        )
+                    )
+                    showCreateDialog = false
+                },
+            )
+        }
     }
 }
 
@@ -319,6 +378,118 @@ private fun EditInvoiceDialog(
                     val paidDate = if (status == "PAID") (invoice.paidDate ?: today) else null
                     onSave(provider, parsedAmount, status, category, dueDate, paidDate, notes)
                 },
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun CreateInvoiceDialog(
+    today: String,
+    onDismiss: () -> Unit,
+    onSave: (provider: String, amount: String, status: String, category: String, dueDate: String, paidDate: String?, notes: String) -> Unit,
+) {
+    var provider by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("PENDING") }
+    var category by remember { mutableStateOf("") }
+    var dueDate by remember { mutableStateOf(today) }
+    var notes by remember { mutableStateOf("") }
+
+    val statuses = listOf("PENDING", "PAID", "OVERDUE")
+    val datePattern = remember { Regex("""\d{4}-\d{2}-\d{2}""") }
+    val amountValue = amount.replace(",", ".").toDoubleOrNull()
+    val canSave = provider.isNotBlank() &&
+        amountValue != null && amountValue > 0.0 &&
+        datePattern.matches(dueDate)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nueva Factura", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = provider,
+                    onValueChange = { provider = it },
+                    label = { Text("Proveedor") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Monto") },
+                    singleLine = true,
+                    isError = amount.isNotBlank() && (amountValue == null || amountValue <= 0.0),
+                    supportingText = {
+                        if (amount.isNotBlank() && (amountValue == null || amountValue <= 0.0)) {
+                            Text("Ingresa un monto mayor a cero", color = Danger)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Categoría (opcional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = dueDate,
+                    onValueChange = { dueDate = it },
+                    label = { Text("Vencimiento (YYYY-MM-DD)") },
+                    singleLine = true,
+                    isError = !datePattern.matches(dueDate),
+                    supportingText = {
+                        if (!datePattern.matches(dueDate)) {
+                            Text("Usa el formato YYYY-MM-DD", color = Danger)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text("Estado", style = MaterialTheme.typography.labelMedium, color = Muted)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    statuses.forEach { s ->
+                        FilterChip(
+                            selected = status == s,
+                            onClick = { status = s },
+                            label = { Text(s.replaceFirstChar { it.uppercase() }) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notas") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val normalizedAmount = amount.replace(",", ".")
+                    val paidDate = if (status == "PAID") today else null
+                    onSave(
+                        provider.trim(),
+                        normalizedAmount,
+                        status,
+                        category.trim(),
+                        dueDate,
+                        paidDate,
+                        notes,
+                    )
+                },
+                enabled = canSave,
                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
             ) {
                 Text("Guardar")
