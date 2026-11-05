@@ -25,6 +25,11 @@ dependencies {
 
     // Coroutines for Play Services (for .await() on Task)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+
+    // Tests
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.compose.ui:ui-test-junit4:1.7.3")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
 
 compose.desktop {
