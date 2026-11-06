@@ -28,3 +28,19 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class FeatureFlag(models.Model):
+    """Bandera de funcionalidad controlada desde el backend (feature flag)."""
+    key = models.CharField(max_length=64, unique=True)
+    enabled = models.BooleanField(default=False)
+    description = models.CharField(max_length=255, blank=True, default='')
+    min_version = models.CharField(max_length=32, blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'feature_flags'
+        ordering = ['key']
+
+    def __str__(self):
+        return f'{self.key}={self.enabled}'

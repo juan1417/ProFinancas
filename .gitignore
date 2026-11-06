@@ -45,3 +45,4 @@ gen/
 out/
 local.properties
 .gradle/
+.vercel

@@ -1,5 +1,5 @@
 """
-URL configuration for ProFinanzas project.
+URL configuration for profinancas project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from usuarios.views import app_version
+from usuarios.views import app_version, app_config
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/', include('facturas.urls')),
     path('api/', include('ingestion.urls')),
     path('api/app/version/', app_version, name='app-version'),
+    path('api/app/config/', app_config, name='app-config'),
 ]

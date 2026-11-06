@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.profinanzas.core.config.RemoteConfig
 import com.profinanzas.core.ui.theme.ProFinanzasTheme
 import com.profinanzas.core.update.AppVersionInfo
 import com.profinanzas.core.update.UpdateChecker
@@ -26,6 +27,7 @@ fun App() {
         LaunchedEffect(Unit) {
             scope.launch {
                 withContext(Dispatchers.IO) {
+                    RemoteConfig.refresh()
                     updateInfo = UpdateChecker.check()
                 }
             }

@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.profinanzas.core.api.ApiConstants
+import com.profinanzas.core.config.RemoteConfig
 import com.profinanzas.core.ui.navigation.MainShell
 import com.profinanzas.core.ui.navigation.Screen
 import com.profinanzas.core.ui.theme.ProFinanzasTheme
@@ -48,6 +49,7 @@ fun ProFinanzasNavHost() {
     LaunchedEffect(authUiState.isAuthenticated) {
         if (authUiState.isAuthenticated) {
             withContext(Dispatchers.IO) {
+                RemoteConfig.refresh()
                 updateInfo = UpdateChecker.check(ApiConstants.BASE_URL)
             }
         }

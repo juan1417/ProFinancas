@@ -23,3 +23,6 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'username', 'password1', 'password2'),
         }),
     )
+
+from .models import FeatureFlag
+admin.site.register(FeatureFlag)

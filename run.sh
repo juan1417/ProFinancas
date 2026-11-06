@@ -45,12 +45,12 @@ echo ">> Instalando dependencias del backend (uv)..."
 uv sync --quiet
 
 echo ">> Aplicando migraciones (settings_dev, SQLite)..."
-DJANGO_SETTINGS_MODULE=ProFinanzas.settings_dev uv run python manage.py migrate --run-syncdb 2>/dev/null || \
-    DJANGO_SETTINGS_MODULE=ProFinanzas.settings_dev uv run python manage.py migrate
+DJANGO_SETTINGS_MODULE=profinancas.settings_dev uv run python manage.py migrate --run-syncdb 2>/dev/null || \
+    DJANGO_SETTINGS_MODULE=profinancas.settings_dev uv run python manage.py migrate
 
 start_backend() {
     echo ">> Levantando backend en http://127.0.0.1:8000 (Ctrl+C para detener)"
-    DJANGO_SETTINGS_MODULE=ProFinanzas.settings_dev \
+    DJANGO_SETTINGS_MODULE=profinancas.settings_dev \
         SECRET_KEY="$SECRET_KEY" DEBUG="$DEBUG" \
         uv run python manage.py runserver 0.0.0.0:8000
 }

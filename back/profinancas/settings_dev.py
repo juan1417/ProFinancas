@@ -3,7 +3,7 @@ Dev-only settings override — points Django at a local SQLite file so
 you can `runserver` without spinning up Postgres.
 
 Usage:
-    set DJANGO_SETTINGS_MODULE=ProFinanzas.settings_dev
+    set DJANGO_SETTINGS_MODULE=profinancas.settings_dev
     python manage.py runserver
 
 Everything else is inherited from `settings.py`. The SQLite file lives

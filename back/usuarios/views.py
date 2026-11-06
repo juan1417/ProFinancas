@@ -165,6 +165,18 @@ class ThrottledTokenRefreshView(TokenRefreshView):
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
+def app_config(request):
+    """Configuración remota: feature flags controlados desde el back."""
+    try:
+        from .models import FeatureFlag
+        flags = {f.key: f.enabled for f in FeatureFlag.objects.all()}
+    except Exception:
+        flags = {}
+    return Response({'features': flags})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
 def app_version(request):
     """Endpoint de versionado para actualizaciones OTA de los clientes."""
     return Response({

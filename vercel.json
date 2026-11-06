@@ -1,19 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
+  "buildCommand": "pip install -r requirements.txt && python manage.py migrate --noinput",
   "env": {
-    "DJANGO_SETTINGS_MODULE": "ProFinanzas.settings",
+    "DJANGO_SETTINGS_MODULE": "profinancas.settings",
     "PYTHONPATH": "back"
   }
 }

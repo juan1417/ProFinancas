@@ -1,27 +1,28 @@
 """
-Django settings for ProFinanzas project.
+Django settings for profinancas project.
 """
 
 from pathlib import Path
 from datetime import timedelta
-from dotenv import load_dotenv
-from django.core.exceptions import ImproperlyConfigured
 import os
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-if not SECRET_KEY:
-    raise ImproperlyConfigured(
-        'SECRET_KEY is required. Generate one with: '
-        'python -c "import secrets; print(secrets.token_urlsafe(50))"'
-    )
+SECRET_KEY = os.getenv('SECRET_KEY') or os.getenv('VERCEL_SECRET_KEY') or 'django-insecure-fallback-key-change-me'
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
+_allowed = os.getenv('ALLOWED_HOSTS', '')
+if _allowed:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+elif DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [
+        '*.vercel.app',
+        'localhost',
+        '127.0.0.1',
+    ]
 
 # Application definition
 INSTALLED_APPS = [
@@ -54,7 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'ProFinanzas.urls'
+ROOT_URLCONF = 'profinancas.urls'
 
 TEMPLATES = [
     {
@@ -72,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ProFinanzas.wsgi.application'
+WSGI_APPLICATION = 'profinancas.wsgi.application'
 
 # ─── Base de Datos ────────────────────────────────────────────────────────────
 # En entorno de tests se usa SQLite en memoria para velocidad (TDD)
@@ -190,17 +191,22 @@ USE_I18N = True
 USE_TZ = True
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
-    if origin.strip()
-]
-if not CORS_ALLOWED_ORIGINS:
+_cors_raw = os.getenv('CORS_ALLOWED_ORIGINS', '')
+if _cors_raw.strip() == '*':
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = []
+else:
     CORS_ALLOWED_ORIGINS = [
-        'http://localhost:8000',
-        'http://127.0.0.1:8000',
-        'http://10.0.2.2:8000',
+        origin.strip()
+        for origin in _cors_raw.split(',')
+        if origin.strip()
     ]
+    if not CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS = [
+            'http://localhost:8000',
+            'http://127.0.0.1:8000',
+            'http://10.0.2.2:8000',
+        ]
 CORS_ALLOW_CREDENTIALS = True
 
 # ─── Seguridad HTTP (solo cuando DEBUG=False) ─────────────────────────────────
@@ -217,6 +223,34 @@ if not DEBUG:
 import os
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
+# Logging: solo console (compatible con Vercel/serverless donde el FS es read-only).
+# El handler de archivo solo se activa si el directorio de logs es escribible.
+import os as _os
+_LOG_DIR = BASE_DIR / 'logs'
+_SECURITY_HANDLERS = ['console']
+_handlers = {
+    'console': {
+        'level': 'WARNING',
+        'class': 'logging.StreamHandler',
+        'formatter': 'security',
+    },
+}
+if not _os.getenv('VERCEL') and not _os.getenv('VERCEL_ENV'):
+    try:
+        _LOG_DIR.mkdir(parents=True, exist_ok=True)
+        _test = _LOG_DIR / 'security.log'
+        with open(_test, 'a'):
+            pass
+        _handlers['security_file'] = {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': str(_test),
+            'formatter': 'security',
+        }
+        _SECURITY_HANDLERS = ['security_file', 'console']
+    except (OSError, IOError):
+        pass
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -226,22 +260,10 @@ LOGGING = {
             'style': '{',
         },
     },
-    'handlers': {
-        'security_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'security.log',
-            'formatter': 'security',
-        },
-        'console': {
-            'level': 'WARNING',
-            'class': 'logging.StreamHandler',
-            'formatter': 'security',
-        },
-    },
+    'handlers': _handlers,
     'loggers': {
         'profinanzas.security': {
-            'handlers': ['security_file', 'console'],
+            'handlers': _SECURITY_HANDLERS,
             'level': 'INFO',
             'propagate': False,
         },

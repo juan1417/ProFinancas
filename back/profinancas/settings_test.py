@@ -1,7 +1,7 @@
 """
 Test-only settings overrides.
 
-Used by setting `DJANGO_SETTINGS_MODULE=ProFinanzas.settings_test`
+Used by setting `DJANGO_SETTINGS_MODULE=profinancas.settings_test`
 or by pytest when DJANGO_TESTING is set. Forces SQLite in-memory so
 tests don't need a running Postgres instance.
 

@@ -1,0 +1,17 @@
+# Excluir todo lo que Vercel no necesita (solo se despliega el backend)
+android/
+desktop/
+odd/
+scripts/
+docs/
+*.md
+!README.md
+.git/
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.sqlite3
+back/.venv/
+back/logs/
+back/dev.sqlite3
