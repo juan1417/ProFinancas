@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from usuarios.views import app_version
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +25,5 @@ urlpatterns = [
     path('api/', include('budgets.urls')),
     path('api/', include('facturas.urls')),
     path('api/', include('ingestion.urls')),
+    path('api/app/version/', app_version, name='app-version'),
 ]
