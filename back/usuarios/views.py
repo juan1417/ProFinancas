@@ -164,7 +164,7 @@ class ThrottledTokenRefreshView(TokenRefreshView):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([permissions.AllowAny])
 def app_version(request):
     """Endpoint de versionado para actualizaciones OTA de los clientes."""
     return Response({
