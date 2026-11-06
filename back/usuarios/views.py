@@ -1,6 +1,8 @@
 import logging
+import os
 
 from rest_framework import generics, permissions, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
@@ -159,3 +161,17 @@ class ThrottledTokenRefreshView(TokenRefreshView):
     Renueva el access token. Throttled para prevenir abuso.
     """
     throttle_classes = [_TokenRefreshThrottle]
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def app_version(request):
+    """Endpoint de versionado para actualizaciones OTA de los clientes."""
+    return Response({
+        'latest_version': os.getenv('APP_LATEST_VERSION', '1.0.0'),
+        'min_version': os.getenv('APP_MIN_VERSION', '1.0.0'),
+        'download_url_android': os.getenv('APP_DOWNLOAD_ANDROID', ''),
+        'download_url_desktop': os.getenv('APP_DOWNLOAD_DESKTOP', ''),
+        'changelog': os.getenv('APP_CHANGELOG', ''),
+        'force_update': os.getenv('APP_FORCE_UPDATE', 'false').lower() == 'true',
+    })

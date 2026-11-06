@@ -10,12 +10,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.fragment.app.FragmentActivity
+import com.profinanzas.core.auth.BiometricHelper
 import com.profinanzas.core.ui.theme.*
 import com.profinanzas.features.auth.presentation.viewmodel.AuthViewModel
 
@@ -135,20 +138,43 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val context = LocalContext.current
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedButton(
-                onClick = { /* TODO: biometric auth */ },
+                onClick = {
+                    val activity = context as? FragmentActivity
+                    if (activity != null && BiometricHelper.isAvailable(context)) {
+                        BiometricHelper.prompt(
+                            activity = activity,
+                            title = "Touch ID",
+                            onSuccess = { viewModel.restoreSession() },
+                            onError = { viewModel.clearError() },
+                        )
+                    }
+                },
                 modifier = Modifier.weight(1f),
+                enabled = BiometricHelper.isAvailable(context),
             ) {
                 Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Touch ID")
             }
             OutlinedButton(
-                onClick = { /* TODO: biometric auth */ },
+                onClick = {
+                    val activity = context as? FragmentActivity
+                    if (activity != null && BiometricHelper.isAvailable(context)) {
+                        BiometricHelper.prompt(
+                            activity = activity,
+                            title = "Face ID",
+                            onSuccess = { viewModel.restoreSession() },
+                            onError = { viewModel.clearError() },
+                        )
+                    }
+                },
                 modifier = Modifier.weight(1f),
+                enabled = BiometricHelper.isAvailable(context),
             ) {
                 Icon(Icons.Default.Face, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))

@@ -39,6 +39,10 @@ class AuthViewModel @Inject constructor(
         tryRestoreSession()
     }
 
+    fun restoreSession() {
+        tryRestoreSession()
+    }
+
     private fun tryRestoreSession() {
         viewModelScope.launch {
             if (tokenManager.isLoggedIn) {
