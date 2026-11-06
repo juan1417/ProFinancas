@@ -26,6 +26,12 @@ DATABASES = {
 # Tests make requests against 'testserver' (Django's default test host).
 ALLOWED_HOSTS = ['*']
 
+# Evita 301 por SECURE_SSL_REDIRECT cuando DEBUG=False en el entorno:
+# settings.py fija SECURE_SSL_REDIRECT=True antes de que este modulo ponga DEBUG=True.
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
 # Los tests disparan muchas peticiones desde la misma IP (testserver) y el
 # throttling real (5/hora en register) las bloquearia con 429. Se suben los
 # limites en test para no interferir con la suite; la logica de throttling
