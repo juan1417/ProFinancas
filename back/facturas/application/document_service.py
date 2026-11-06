@@ -1,6 +1,6 @@
 """Caso de uso: generar el documento de una factura."""
 try:
-    from .adapters.pdf import ReportLabDocumentGenerator
+    from ..adapters.pdf import ReportLabDocumentGenerator
     _AVAILABLE = True
 except Exception:  # pragma: no cover - reportlab no instalado
     _AVAILABLE = False
