@@ -1,0 +1,34 @@
+name: Backend keep-warm
+
+# Mantiene el backend de Vercel + Neon "despierto" para que el front no sufra
+# cold-starts (Vercel) ni auto-suspensión de Neon en plan gratis. Neon se
+# suspende tras ~5 min de inactividad; un ping cada 2 min lo mantiene activo.
+on:
+  schedule:
+    - cron: '*/2 * * * *'
+  workflow_dispatch: {} # permite dispararlo a mano desde la pestaña Actions
+
+permissions: {}
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping backend
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://back-wine-nu.vercel.app' }}
+        run: |
+          set -euo pipefail
+          url="${BACKEND_URL%/}/api/app/version/"
+          echo "Pingueando $url"
+          # --retry y -m dan margen al cold-start sin colgarse el runner.
+          curl -fsS --retry 3 --retry-all-errors --retry-delay 5 -m 45 \
+            -o /dev/null -w "HTTP %{http_code}  total=%{time_total}s\n" "$url" || {
+              echo "WARNING: el ping falló; revisá el backend.";
+              exit 0; # no romper el historial de Actions por un cold-start
+            }
