@@ -119,7 +119,7 @@ fun RegisterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                colors = ButtonDefaults.buttonColors(),
                 enabled = !uiState.isLoading &&
                         email.isNotBlank() &&
                         username.isNotBlank() &&

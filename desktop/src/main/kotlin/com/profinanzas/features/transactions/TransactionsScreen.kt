@@ -52,7 +52,7 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
             }
             Button(
                 onClick = { showCreateDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                colors = ButtonDefaults.buttonColors(),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {

@@ -123,7 +123,7 @@ fun ActualizarFacturaSheet(
                 Button(
                     onClick = { onSave(editedProvider, editedAmount.ifBlank { amount }, editedNotes) },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = editedProvider.isNotBlank(),
                 ) {
                     Text("Guardar")

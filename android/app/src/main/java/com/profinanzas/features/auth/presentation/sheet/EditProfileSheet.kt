@@ -100,7 +100,7 @@ fun EditProfileSheet(
                 Button(
                     onClick = { onSave(firstName, lastName, username) },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = username.isNotBlank(),
                 ) {
                     Text("Guardar")

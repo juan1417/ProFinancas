@@ -60,7 +60,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                     )
                     Button(
                         onClick = { showCreateDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                        colors = ButtonDefaults.buttonColors(),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
@@ -249,7 +249,7 @@ fun FacturasScreen(viewModel: FacturasViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = { showEditDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                        colors = ButtonDefaults.buttonColors(),
                         modifier = Modifier.weight(1f),
                     ) {
                         Text("Editar", color = Bg)
@@ -378,7 +378,7 @@ private fun EditInvoiceDialog(
                     val paidDate = if (status == "PAID") (invoice.paidDate ?: today) else null
                     onSave(provider, parsedAmount, status, category, dueDate, paidDate, notes)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text("Guardar")
             }
@@ -490,7 +490,7 @@ private fun CreateInvoiceDialog(
                     )
                 },
                 enabled = canSave,
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text("Guardar")
             }

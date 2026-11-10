@@ -148,7 +148,7 @@ fun AddCardSheet(
                         onSave(brand, bank, last4, expiry, holderName, colorHex)
                     },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = brand.isNotBlank() && last4.length == 4,
                 ) {
                     Text("Guardar")

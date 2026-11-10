@@ -107,7 +107,7 @@ fun PreferencesSheet(
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text("Cerrar")
             }

@@ -163,7 +163,7 @@ fun RegistrarFacturaSheet(
                         onSave(provider, amount, dueDate, category, notes)
                     },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = provider.isNotBlank() && amount.toDoubleOrNull() != null,
                 ) {
                     Text("Guardar")

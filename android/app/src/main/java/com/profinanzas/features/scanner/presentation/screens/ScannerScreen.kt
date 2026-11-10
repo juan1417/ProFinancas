@@ -71,7 +71,7 @@ fun ScannerScreen(
             Button(
                 onClick = { galleryLauncher.launch("image/*") },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Icon(Icons.Default.Photo, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))

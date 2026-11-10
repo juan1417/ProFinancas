@@ -89,7 +89,7 @@ fun LoginScreen(
                 Button(
                     onClick = { viewModel.login(email, password) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = !uiState.isLoading,
                 ) {
                     if (uiState.isLoading) {
@@ -216,7 +216,7 @@ fun RegisterScreen(
                 Button(
                     onClick = { viewModel.register(email, username, password, passwordConfirm) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = !uiState.isLoading && password.length >= 8 && password == passwordConfirm,
                 ) {
                     if (uiState.isLoading) {

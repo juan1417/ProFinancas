@@ -73,7 +73,7 @@ fun DetalleFacturaSheet(
                 Button(
                     onClick = onMarkPaid,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Bg),
+                    colors = ButtonDefaults.buttonColors(),
                     enabled = invoice.status != "PAID",
                 ) {
                     Text("Marcar pagada")

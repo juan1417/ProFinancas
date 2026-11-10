@@ -209,7 +209,7 @@ fun CreateCategorySheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                colors = ButtonDefaults.buttonColors(),
                 enabled = name.length >= 3,
             ) {
                 Text("Crear Categoría")
@@ -272,7 +272,7 @@ fun EditCategorySheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                colors = ButtonDefaults.buttonColors(),
                 enabled = name.length >= 3,
             ) {
                 Text("Guardar Cambios")

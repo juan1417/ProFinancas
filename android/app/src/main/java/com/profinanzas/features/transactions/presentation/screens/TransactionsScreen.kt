@@ -286,7 +286,7 @@ fun AddTransactionSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                colors = ButtonDefaults.buttonColors(),
                 enabled = selectedCategory != null && description.isNotBlank() &&
                     amount.toDoubleOrNull() != null && datePattern.matches(date),
             ) {

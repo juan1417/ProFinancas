@@ -103,7 +103,7 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+            colors = ButtonDefaults.buttonColors(),
             enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank(),
         ) {
             if (uiState.isLoading) {

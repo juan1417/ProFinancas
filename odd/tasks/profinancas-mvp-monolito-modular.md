@@ -127,3 +127,9 @@ Restricción vigente del usuario: sin `git commit`/`git push` sin confirmación 
   `bodySmall` top-level (Type.kt) porque ya no es composable. Verificado con screenshots del emulador
   en claro y oscuro (legibles ambos) y connectedAndroidTest 2/2. Desktop sin cambios (modo oscuro fijo,
   sin toggle, sin bug de contraste actual).
+- **L22** (2026-11-10): Fase B desktop migrada (Palette+AppTheme prefs, Color solo marca, Theme
+  provee paleta, Canvas hoist Border, Type sin color). QA visual en emulador (claro) destapó 2 bugs
+  que el compilador no veía: (1) FAB con "+" blanco sobre verde y botones `contentColor=Bg` casi
+  blancos sobre verde en modo claro, porque `onPrimary`/`Bg` del palette claro eran el bg (casi
+  blanco). Fix: `onPrimary`/`onPrimaryContainer` = oscuro fijo en ambos temas; botones marca ->
+  `buttonColors()` del tema. Re-captura: FAB oscuro legible. Desktop paridad aplicada.

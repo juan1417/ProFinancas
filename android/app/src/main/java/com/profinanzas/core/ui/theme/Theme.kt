@@ -21,8 +21,8 @@ fun ProFinanzasTheme(
 
     val colorScheme = if (dark) {
         darkColorScheme(
-            primary = Accent, onPrimary = palette.bg,
-            primaryContainer = Accent, onPrimaryContainer = palette.bg,
+            primary = Accent, onPrimary = Color(0xFF0A0A0F),
+            primaryContainer = Accent, onPrimaryContainer = Color(0xFF0A0A0F),
             secondary = CatTransport, onSecondary = palette.fg,
             tertiary = CatServices, onTertiary = palette.fg,
             background = palette.bg, onBackground = palette.fg,
@@ -33,8 +33,8 @@ fun ProFinanzasTheme(
         )
     } else {
         lightColorScheme(
-            primary = Accent, onPrimary = palette.bg,
-            primaryContainer = Accent, onPrimaryContainer = palette.bg,
+            primary = Accent, onPrimary = Color(0xFF0A0A0F),
+            primaryContainer = Accent, onPrimaryContainer = Color(0xFF0A0A0F),
             secondary = CatTransport, onSecondary = Color(0xFFFFFFFF),
             tertiary = CatServices, onTertiary = Color(0xFFFFFFFF),
             background = palette.bg, onBackground = palette.fg,
