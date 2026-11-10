@@ -143,8 +143,8 @@ fun TransactionsScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp),
-            containerColor = NavyBlue,
-            contentColor = androidx.compose.ui.graphics.Color.White,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
         ) {
             Icon(Icons.Default.Add, contentDescription = "Nueva transacción")
         }

@@ -32,13 +32,13 @@ private val DarkColorScheme = darkColorScheme(
 // Esquema claro: mismo vocabulario de tokens, invertido.
 private val LightColorScheme = lightColorScheme(
     primary = Accent,
-    onPrimary = Fg,
+    onPrimary = Color(0xFF0A0A0F),
     primaryContainer = Accent,
-    onPrimaryContainer = Fg,
+    onPrimaryContainer = Color(0xFF0A0A0F),
     secondary = CatTransport,
-    onSecondary = Fg,
+    onSecondary = Color(0xFF0A0A0F),
     tertiary = CatServices,
-    onTertiary = Fg,
+    onTertiary = Color(0xFF0A0A0F),
     background = Color(0xFFF7F7FA),
     onBackground = Color(0xFF0A0A0F),
     surface = Color(0xFFFFFFFF),
@@ -46,7 +46,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = Color(0xFFE8E8EC),
     onSurfaceVariant = Color(0xFF6B6B76),
     error = Danger,
-    onError = Fg,
+    onError = Color(0xFFFFFFFF),
     outline = Border,
 )
 
