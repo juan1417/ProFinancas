@@ -36,8 +36,10 @@ object NetworkModule {
             .addInterceptor(logging)
             .authenticator(tokenRefreshAuthenticator)
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
+            // Lectura tolerante al cold-start: Vercel + Neon (auto-suspend) pueden
+            // tardar 15-30s en el primer request tras inactividad.
+            .readTimeout(45, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
