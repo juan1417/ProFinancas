@@ -20,7 +20,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/api\"")
+        buildConfigField(
+            "String",
+            "API_BASE_URL",
+            "\"${providers.gradleProperty("API_BASE_URL").getOrElse("https://back-wine-nu.vercel.app/api")}\""
+        )
     }
 
     buildTypes {

@@ -1,8 +1,14 @@
 package com.profinanzas.core.api
 
 object ApiConstants {
-    private const val DEFAULT_HOST = "localhost:8000"
-    const val BASE_URL = "http://$DEFAULT_HOST/api"
+    // Default: producción Vercel. Para desarrollo local, pasar una de estas:
+    //   - env:    PROFINANZAS_API_BASE_URL=http://localhost:8000/api
+    //   - system: -Dprofinanzas.apiBaseUrl=http://localhost:8000/api
+    val BASE_URL: String = (
+        System.getenv("PROFINANZAS_API_BASE_URL")
+            ?: System.getProperty("profinanzas.apiBaseUrl")
+            ?: "https://back-wine-nu.vercel.app/api"
+        ).trimEnd('/')
 
     const val REGISTER = "auth/register/"
     const val LOGIN = "auth/login/"

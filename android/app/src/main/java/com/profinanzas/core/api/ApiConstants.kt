@@ -1,8 +1,10 @@
 package com.profinanzas.core.api
 
 object ApiConstants {
-    private const val DEFAULT_HOST = "10.0.2.2:8000"
-    const val BASE_URL = "http://$DEFAULT_HOST/api"
+    // Base configurada en build.gradle.kts (BuildConfig.API_BASE_URL).
+    // Default: producción Vercel. Para desarrollo local:
+    //   ./gradlew :app:assembleDebug -PAPI_BASE_URL=http://10.0.2.2:8000/api
+    val BASE_URL: String = com.profinanzas.BuildConfig.API_BASE_URL.trimEnd('/')
 
     // Auth
     const val REGISTER = "auth/register/"
