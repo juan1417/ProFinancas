@@ -117,3 +117,13 @@ Restricción vigente del usuario: sin `git commit`/`git push` sin confirmación 
   Android ahora se alimenta de las transacciones descargadas. Pendiente: fuente única de tokens con
   generador, cableado del toggle de tema al estado global (hoy `remember` local), color de categoría
   por hash del id y estados Loading/Empty/Error compartidos.
+- **L21** (2026-11-10): Fase B (sistema de tema adaptativo) en Android. `Palette.kt` nuevo:
+  `AppPalette` (Dark/Light) + `LocalAppPalette` + `AppTheme` (ThemeMode SYSTEM/LIGHT/DARK persistido
+  en SharedPreferences) + `isDarkTheme()`. Los 11 tokens neutros (`Bg/Surface/Fg/Muted/Border/
+  AccentSoft/FgSoft/SurfaceHover/Neutral*/SurfaceLight`) pasaron a getters `@Composable` -> los ~304
+  call sites NO se tocaron. Marca (`Accent/Danger/Cat*/Chart*/NavyBlue`) queda estática. `Theme.kt`
+  reescrito para proporcionar la paleta y elegir colorScheme efectivo. `MainActivity.init(AppTheme)`,
+  switch de `PreferencesSheet` ahora persiste y reconfigura en vivo. Se quitó `color = Muted` del
+  `bodySmall` top-level (Type.kt) porque ya no es composable. Verificado con screenshots del emulador
+  en claro y oscuro (legibles ambos) y connectedAndroidTest 2/2. Desktop sin cambios (modo oscuro fijo,
+  sin toggle, sin bug de contraste actual).

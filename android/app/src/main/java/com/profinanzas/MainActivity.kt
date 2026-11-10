@@ -16,6 +16,7 @@ import com.profinanzas.core.api.ApiConstants
 import com.profinanzas.core.config.RemoteConfig
 import com.profinanzas.core.ui.navigation.MainShell
 import com.profinanzas.core.ui.navigation.Screen
+import com.profinanzas.core.ui.theme.AppTheme
 import com.profinanzas.core.ui.theme.ProFinanzasTheme
 import com.profinanzas.core.update.AppVersionInfo
 import com.profinanzas.core.update.UpdateChecker
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        AppTheme.init(this)
         setContent {
             ProFinanzasTheme {
                 ProFinanzasNavHost()

@@ -59,7 +59,6 @@ val Typography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        color = Muted,
     ),
     // Eyebrow — mono, 11px, ls 0.1em, uppercase
     labelSmall = TextStyle(

@@ -15,7 +15,6 @@ fun PreferencesSheet(
     onDismiss: () -> Unit,
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var darkModeEnabled by remember { mutableStateOf(true) }
     var currency by remember { mutableStateOf("COP") }
 
     ModalBottomSheet(
@@ -70,9 +69,12 @@ fun PreferencesSheet(
                     Text("Modo oscuro", fontWeight = FontWeight.SemiBold)
                     Text("Tema de la aplicación", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
+                val ctx = androidx.compose.ui.platform.LocalContext.current
                 Switch(
-                    checked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it },
+                    checked = isDarkTheme(),
+                    onCheckedChange = { isDark ->
+                        AppTheme.set(ctx, if (isDark) ThemeMode.DARK else ThemeMode.LIGHT)
+                    },
                     colors = SwitchDefaults.colors(
                         checkedTrackColor = Accent,
                         uncheckedTrackColor = Border,
