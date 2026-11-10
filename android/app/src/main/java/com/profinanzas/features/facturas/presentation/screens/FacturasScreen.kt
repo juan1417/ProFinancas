@@ -60,7 +60,7 @@ fun FacturasScreen(
             Column {
                 Text("FACTURAS", style = MaterialTheme.typography.labelSmall, color = Accent)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Gestión de facturas", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Gestión de facturas", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Fg)
             }
             Button(
                 onClick = { showRegistrarSheet = true },

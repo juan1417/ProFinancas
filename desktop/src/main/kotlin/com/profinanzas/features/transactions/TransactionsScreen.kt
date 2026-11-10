@@ -48,7 +48,7 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
             Column {
                 Text("TRANSACCIONES", style = MaterialTheme.typography.labelSmall, color = Accent)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Gestión de transacciones", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Gestión de transacciones", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Fg)
             }
             Button(
                 onClick = { showCreateDialog = true },

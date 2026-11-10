@@ -47,7 +47,7 @@ fun CategoriesScreen(viewModel: CategoriesViewModel) {
             Column {
                 Text("CATEGORÍAS", style = MaterialTheme.typography.labelSmall, color = Accent)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Gestión de categorías", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Gestión de categorías", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Fg)
             }
             Button(
                 onClick = { showCreateDialog = true },
