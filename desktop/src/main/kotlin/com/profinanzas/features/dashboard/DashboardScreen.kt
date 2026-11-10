@@ -302,6 +302,7 @@ private fun DonutChart(byCategory: List<CategoryBreakdown>, totalExpenses: Doubl
                     .aspectRatio(1f),
                 contentAlignment = Alignment.Center,
             ) {
+                val borderColor = Border
                 Canvas(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -312,7 +313,7 @@ private fun DonutChart(byCategory: List<CategoryBreakdown>, totalExpenses: Doubl
                     val center = Offset(size.width / 2f, size.height / 2f)
 
                     drawCircle(
-                        color = Border,
+                        color = borderColor,
                         radius = radius,
                         center = center,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
