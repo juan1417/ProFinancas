@@ -60,3 +60,16 @@ por fase, y en esta sesión pidió subir/mergear; se confirma cada push).
     cards CRUD, budgets/alerts, transactions/export responden 200/201.
   - Supuestos: alertas se calculan on-demand (no push); export es descarga CSV/JSON
     (no editor en servidor); tarjetas usan los mismos campos que el wallet local de Android.
+
+- **R3** (2026-11-11): Cableado de A1/A2/A3 en los clientes.
+  - Android: WalletViewModel ahora usa CardRepository (backend) en vez de SharedPreferences;
+    DashboardViewModel carga `budgetAlerts` y DashboardScreen muestra banner cuando
+    status != ok; TransactionViewModel.exportTransactions descarga a Downloads y
+    TransactionsScreen expone botón "Exportar CSV" + toast con la ruta.
+  - Desktop: AppModule lazy singletons (budgetAlertRepository, getBudgetAlertsUseCase,
+    exportTransactionsUseCase); DashboardViewModel carga alerts + banner; TransactionsViewModel
+    exportTransactions (guarda en ~/Downloads) + botón "Exportar CSV" + mensaje. ApiService +
+    modelos (CardDto/BudgetAlertDto/CardCreateRequest) listos.
+  - Sync de tarjetas en desktop queda pendiente por diferencia de modelo (WalletCard con
+    gradientes vs Card del backend); la API ya está cableada.
+  - Verificado: compile android + desktop OK; tests desktop OK; backend 123 passed.
