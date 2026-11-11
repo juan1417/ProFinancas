@@ -1,5 +1,7 @@
 package com.profinanzas.features.transactions.presentation.viewmodel
 
+import android.content.Context
+import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.profinanzas.core.domain.model.Category
@@ -8,10 +10,12 @@ import com.profinanzas.core.domain.model.Transaction
 import com.profinanzas.core.domain.usecase.category.ListCategoriesUseCase
 import com.profinanzas.core.domain.usecase.transaction.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 data class TransactionUiState(
@@ -19,15 +23,19 @@ data class TransactionUiState(
     val summary: Summary? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val exportMessage: String? = null,
+    val isExporting: Boolean = false,
 )
 
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val getTransactions: GetTransactionsUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getSummary: GetSummaryUseCase,
     private val listCategories: ListCategoriesUseCase,
+    private val exportTransactionsUseCase: ExportTransactionsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionUiState())
@@ -82,9 +90,6 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             val zone = java.time.ZoneId.of("America/Bogota")
             val now = java.time.ZonedDateTime.now(zone)
-            // `date` llega como YYYY-MM-DD desde la UI. Si es hoy usamos la
-            // hora actual (el backend rechaza fechas futuras); si es un día
-            // pasado usamos mediodía para no cruzar el límite por zona horaria.
             val whenValue = date
                 ?.takeIf { it.isNotBlank() }
                 ?.let { raw ->
@@ -110,10 +115,6 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
     fun deleteTransaction(id: Int) {
         viewModelScope.launch {
             deleteTransactionUseCase(id)
@@ -132,5 +133,43 @@ class TransactionViewModel @Inject constructor(
             listCategories(type = type)
                 .onSuccess { _categories.value = it }
         }
+    }
+
+    fun exportTransactions(format: String = "csv") {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, exportMessage = null)
+            exportTransactionsUseCase(format = format)
+                .onSuccess { bytes ->
+                    val dir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                        ?: context.cacheDir
+                    val file = File(dir, "transacciones.$format")
+                    try {
+                        file.writeBytes(bytes)
+                        _uiState.value = _uiState.value.copy(
+                            isExporting = false,
+                            exportMessage = "Exportado: ${file.absolutePath}",
+                        )
+                    } catch (e: Exception) {
+                        _uiState.value = _uiState.value.copy(
+                            isExporting = false,
+                            error = "No se pudo guardar el archivo: ${e.message}",
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        error = e.message ?: "Error al exportar",
+                    )
+                }
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearExportMessage() {
+        _uiState.value = _uiState.value.copy(exportMessage = null)
     }
 }

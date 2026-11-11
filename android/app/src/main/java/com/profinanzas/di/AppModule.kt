@@ -31,4 +31,12 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindInvoiceRepository(impl: InvoiceRepositoryImpl): InvoiceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCardRepository(impl: CardRepositoryImpl): CardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBudgetAlertRepository(impl: BudgetAlertRepositoryImpl): BudgetAlertRepository
 }

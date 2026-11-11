@@ -74,4 +74,20 @@ class TransactionRepositoryImpl(
         if (response.isSuccessful) response.body()!!.toDomain()
         else throw Exception("Error al cargar resumen")
     }
+
+    override suspend fun export(
+        format: String,
+        startDate: String?,
+        endDate: String?,
+        type: String?,
+    ): Result<ByteArray> = runCatching {
+        val response = api.exportTransactions(
+            format = format,
+            startDate = startDate,
+            endDate = endDate,
+            type = type,
+        )
+        if (response.isSuccessful) response.body()!!.bytes()
+        else throw Exception("Error al exportar transacciones")
+    }
 }

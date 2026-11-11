@@ -25,7 +25,14 @@ object ApiConstants {
 
     // Budgets
     const val BUDGETS = "budgets/"
+    const val BUDGETS_ALERTS = "budgets/alerts/"
 
     // Invoices
     const val INVOICES = "invoices/"
+
+    // Cards (Gestor de Tarjetas)
+    const val CARDS = "cards/"
+
+    // Transactions export (Hoja de Cálculo)
+    const val TRANSACTIONS_EXPORT = "transactions/export/"
 }

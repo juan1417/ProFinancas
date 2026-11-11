@@ -23,8 +23,12 @@ object ApiConstants {
     const val TRANSACTIONS = "transactions/"
     const val TRANSACTIONS_SUMMARY = "transactions/summary/"
     const val TRANSACTIONS_BY_CATEGORY = "transactions/by_category/"
+    const val TRANSACTIONS_EXPORT = "transactions/export/"
 
     const val BUDGETS = "budgets/"
+    const val BUDGETS_ALERTS = "budgets/alerts/"
 
     const val INVOICES = "invoices/"
+
+    const val CARDS = "cards/"
 }

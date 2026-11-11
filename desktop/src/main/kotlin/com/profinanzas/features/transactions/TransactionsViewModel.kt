@@ -5,6 +5,7 @@ import com.profinanzas.core.domain.model.Transaction
 import com.profinanzas.core.domain.usecase.category.ListCategoriesUseCase
 import com.profinanzas.core.domain.usecase.transaction.CreateTransactionUseCase
 import com.profinanzas.core.domain.usecase.transaction.DeleteTransactionUseCase
+import com.profinanzas.core.domain.usecase.transaction.ExportTransactionsUseCase
 import com.profinanzas.core.domain.usecase.transaction.GetTransactionsUseCase
 import com.profinanzas.di.AppModule
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,8 @@ data class TransactionsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedType: String? = null,
+    val exportMessage: String? = null,
+    val isExporting: Boolean = false,
 )
 
 class TransactionsViewModel(
@@ -31,6 +34,7 @@ class TransactionsViewModel(
     private val createTransactionUseCase: CreateTransactionUseCase = AppModule.createTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase = AppModule.deleteTransactionUseCase,
     private val listCategories: ListCategoriesUseCase = AppModule.listCategoriesUseCase,
+    private val exportTransactionsUseCase: ExportTransactionsUseCase = AppModule.exportTransactionsUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _uiState = MutableStateFlow(TransactionsUiState())
@@ -88,6 +92,32 @@ class TransactionsViewModel(
                 .onSuccess { loadTransactions(_uiState.value.selectedType) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(error = e.message) }
         }
+    }
+
+    fun exportTransactions(format: String = "csv") {
+        scope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, exportMessage = null)
+            exportTransactionsUseCase(format = format)
+                .onSuccess { bytes ->
+                    runCatching {
+                        val dir = java.io.File(System.getProperty("user.home"), "Downloads").apply { mkdirs() }
+                        val file = java.io.File(dir, "transacciones.$format")
+                        file.writeBytes(bytes)
+                        file.absolutePath
+                    }.onSuccess { path ->
+                        _uiState.value = _uiState.value.copy(isExporting = false, exportMessage = "Exportado: $path")
+                    }.onFailure { e ->
+                        _uiState.value = _uiState.value.copy(isExporting = false, error = "No se pudo guardar: ${e.message}")
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(isExporting = false, error = e.message ?: "Error al exportar")
+                }
+        }
+    }
+
+    fun clearExportMessage() {
+        _uiState.value = _uiState.value.copy(exportMessage = null)
     }
 
     fun clearError() {

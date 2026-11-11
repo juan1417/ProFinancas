@@ -83,6 +83,10 @@ object AppModule {
         BudgetRepositoryImpl(apiService)
     }
 
+    val budgetAlertRepository: BudgetAlertRepository by lazy {
+        BudgetAlertRepositoryImpl(apiService)
+    }
+
     val invoiceRepository: InvoiceRepository by lazy {
         InvoiceRepositoryImpl(apiService)
     }
@@ -98,9 +102,11 @@ object AppModule {
     val createTransactionUseCase by lazy { CreateTransactionUseCase(transactionRepository) }
     val deleteTransactionUseCase by lazy { DeleteTransactionUseCase(transactionRepository) }
     val getSummaryUseCase by lazy { GetSummaryUseCase(transactionRepository) }
+    val exportTransactionsUseCase by lazy { ExportTransactionsUseCase(transactionRepository) }
     val getBudgetsUseCase by lazy { GetBudgetsUseCase(budgetRepository) }
     val createBudgetUseCase by lazy { CreateBudgetUseCase(budgetRepository) }
     val deleteBudgetUseCase by lazy { DeleteBudgetUseCase(budgetRepository) }
+    val getBudgetAlertsUseCase by lazy { GetBudgetAlertsUseCase(budgetAlertRepository) }
     val listInvoicesUseCase by lazy { ListInvoicesUseCase(invoiceRepository) }
     val getInvoiceUseCase by lazy { GetInvoiceUseCase(invoiceRepository) }
     val createInvoiceUseCase by lazy { CreateInvoiceUseCase(invoiceRepository) }

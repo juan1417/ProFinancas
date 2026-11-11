@@ -13,12 +13,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.profinanzas.core.ui.components.AppCard
+import com.profinanzas.core.ui.components.ErrorBanner
 import com.profinanzas.core.ui.theme.*
 import com.profinanzas.features.wallet.presentation.components.BudgetProgress
 import com.profinanzas.features.wallet.presentation.components.BudgetProgressCard
 import com.profinanzas.features.wallet.presentation.components.FinancialCard
 import com.profinanzas.features.wallet.presentation.sheet.AddCardSheet
-import com.profinanzas.features.wallet.presentation.viewmodel.StoredCard
+import com.profinanzas.core.domain.model.StoredCard
 import com.profinanzas.features.wallet.presentation.viewmodel.WalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,9 @@ fun WalletScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        item {
+            ErrorBanner(message = uiState.error, onDismiss = viewModel::clearError)
+        }
         // Header
         item {
             Row(

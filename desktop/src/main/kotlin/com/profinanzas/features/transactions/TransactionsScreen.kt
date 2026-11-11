@@ -50,15 +50,32 @@ fun TransactionsScreen(viewModel: TransactionsViewModel) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("Gestión de transacciones", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Fg)
             }
-            Button(
-                onClick = { showCreateDialog = true },
-                colors = ButtonDefaults.buttonColors(),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Nueva", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = { viewModel.exportTransactions("csv") },
+                    enabled = !uiState.isExporting,
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (uiState.isExporting) "Exportando..." else "Exportar CSV", style = MaterialTheme.typography.bodySmall)
+                }
+                Button(
+                    onClick = { showCreateDialog = true },
+                    colors = ButtonDefaults.buttonColors(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Nueva", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+
+        // Mensaje de exportación
+        uiState.exportMessage?.let { msg ->
+            AppCard {
+                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
             }
         }
 

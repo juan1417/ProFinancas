@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,6 +25,7 @@ fun TransactionsScreen(
     viewModel: TransactionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var showAddSheet by remember { mutableStateOf(false) }
     val tabs = listOf("Todos", "Ingresos", "Gastos")
@@ -88,6 +90,31 @@ fun TransactionsScreen(
                             Text("Gastos", style = MaterialTheme.typography.labelSmall, color = Neutral600)
                             Text(currencyFormat.format(summary?.totalExpenses ?: 0.0), color = ExpenseRed, fontWeight = FontWeight.Bold)
                         }
+                    }
+                }
+            }
+
+            // Exportar (Hoja de Cálculo)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(
+                        onClick = { viewModel.exportTransactions("csv") },
+                        enabled = !uiState.isExporting,
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(if (uiState.isExporting) "Exportando..." else "Exportar CSV")
+                    }
+                }
+                uiState.exportMessage?.let { msg ->
+                    LaunchedEffect(msg) {
+                        android.widget.Toast.makeText(
+                            context, msg, android.widget.Toast.LENGTH_LONG
+                        ).show()
+                        viewModel.clearExportMessage()
                     }
                 }
             }

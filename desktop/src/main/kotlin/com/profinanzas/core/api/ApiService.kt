@@ -74,11 +74,33 @@ interface ApiService {
         @Query("end_date") endDate: String? = null,
     ): Response<List<CategoryBreakdownDto>>
 
+    @GET(ApiConstants.TRANSACTIONS_EXPORT)
+    suspend fun exportTransactions(
+        @Query("export") format: String? = null,
+        @Query("start_date") startDate: String? = null,
+        @Query("end_date") endDate: String? = null,
+        @Query("type") type: String? = null,
+    ): Response<okhttp3.ResponseBody>
+
+    // ─── Cards ──────────────────────────────────────────────────────────
+
+    @GET(ApiConstants.CARDS)
+    suspend fun getCards(): Response<List<CardDto>>
+
+    @POST(ApiConstants.CARDS)
+    suspend fun createCard(@Body body: CardCreateRequest): Response<CardDto>
+
+    @DELETE("${ApiConstants.CARDS}{id}/")
+    suspend fun deleteCard(@Path("id") id: Int): Response<Unit>
+
     @GET(ApiConstants.BUDGETS)
     suspend fun getBudgets(
         @Query("period") period: String? = null,
         @Query("is_active") isActive: Boolean? = null,
     ): Response<List<BudgetDto>>
+
+    @GET(ApiConstants.BUDGETS_ALERTS)
+    suspend fun getBudgetAlerts(): Response<List<BudgetAlertDto>>
 
     @POST(ApiConstants.BUDGETS)
     suspend fun createBudget(@Body body: BudgetCreateRequest): Response<BudgetDto>

@@ -110,6 +110,43 @@ fun DashboardScreen(
             }
         }
 
+        // ─── Alertas de presupuesto (issue #15) ───────────────────────
+        val alerts = uiState.budgetAlerts.filter { it.status != "ok" }
+        if (alerts.isNotEmpty()) {
+            item {
+                alerts.forEach { a ->
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = a.categoryName ?: "Presupuesto",
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (a.status == "exceeded") ExpenseRed else Warning,
+                                )
+                                Text(
+                                    text = if (a.status == "exceeded")
+                                        "Has superado el límite (${String.format("%.0f", a.percentage)}%)"
+                                    else "Cerca del límite (${String.format("%.0f", a.percentage)}%)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Muted,
+                                )
+                            }
+                            Text(
+                                text = "$ ${String.format("%,.0f", a.spent)} / ${String.format("%,.0f", a.amount)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Muted,
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+
         // ─── Balance Card ──────────────────────────────────────────────
         item {
             AppCard {

@@ -1,5 +1,7 @@
 package com.profinanzas.core.domain.model
 
+import kotlinx.serialization.Serializable
+
 data class User(
     val id: String,
     val email: String,
@@ -83,4 +85,17 @@ data class Invoice(
     val notes: String = "",
     val createdAt: String? = null,
     val updatedAt: String? = null,
+)
+
+
+@Serializable
+data class StoredCard(
+    val id: String,
+    val brand: String,
+    val bank: String,
+    val last4: String,
+    val expiry: String,
+    val holderName: String,
+    val colorHex: String,
+    val createdAt: Long,
 )

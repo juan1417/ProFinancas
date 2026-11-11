@@ -2,9 +2,11 @@ package com.profinanzas.features.dashboard.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.profinanzas.core.data.model.BudgetAlertDto
 import com.profinanzas.core.domain.model.Budget
 import com.profinanzas.core.domain.model.Summary
 import com.profinanzas.core.domain.model.Transaction
+import com.profinanzas.core.domain.usecase.budget.GetBudgetAlertsUseCase
 import com.profinanzas.core.domain.usecase.budget.GetBudgetsUseCase
 import com.profinanzas.core.domain.usecase.transaction.GetSummaryUseCase
 import com.profinanzas.core.domain.usecase.transaction.GetTransactionsUseCase
@@ -19,6 +21,7 @@ data class DashboardUiState(
     val summary: Summary? = null,
     val recentTransactions: List<Transaction> = emptyList(),
     val budgets: List<Budget> = emptyList(),
+    val budgetAlerts: List<BudgetAlertDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
@@ -28,6 +31,7 @@ class DashboardViewModel @Inject constructor(
     private val getSummary: GetSummaryUseCase,
     private val getTransactions: GetTransactionsUseCase,
     private val getBudgets: GetBudgetsUseCase,
+    private val getBudgetAlerts: GetBudgetAlertsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -37,6 +41,17 @@ class DashboardViewModel @Inject constructor(
         loadSummary()
         loadRecentTransactions()
         loadBudgets()
+        loadBudgetAlerts()
+    }
+
+    fun loadBudgetAlerts() {
+        viewModelScope.launch {
+            getBudgetAlerts()
+                .onSuccess { alerts ->
+                    _uiState.value = _uiState.value.copy(budgetAlerts = alerts)
+                }
+                .onFailure { /* silencioso: alertas opcionales */ }
+        }
     }
 
     fun loadSummary(period: String = "month") {

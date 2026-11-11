@@ -4,39 +4,33 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.profinanzas.core.domain.model.Budget
+import com.profinanzas.core.domain.model.StoredCard
+import com.profinanzas.core.domain.repository.CardRepository
 import com.profinanzas.core.domain.usecase.budget.GetBudgetsUseCase
+import com.profinanzas.core.domain.usecase.card.CreateCardUseCase
+import com.profinanzas.core.domain.usecase.card.DeleteCardUseCase
+import com.profinanzas.core.domain.usecase.card.GetCardsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
-
-@Serializable
-data class StoredCard(
-    val id: String,
-    val brand: String,
-    val bank: String,
-    val last4: String,
-    val expiry: String,
-    val holderName: String,
-    val colorHex: String,
-    val createdAt: Long,
-)
 
 data class WalletUiState(
     val cards: List<StoredCard> = emptyList(),
     val budgets: List<Budget> = emptyList(),
     val isLoading: Boolean = false,
+    val error: String? = null,
 )
 
 @HiltViewModel
 class WalletViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val getCardsUseCase: GetCardsUseCase,
+    private val createCardUseCase: CreateCardUseCase,
+    private val deleteCardUseCase: DeleteCardUseCase,
     private val getBudgetsUseCase: GetBudgetsUseCase,
 ) : ViewModel() {
 
@@ -49,39 +43,62 @@ class WalletViewModel @Inject constructor(
     }
 
     private fun loadCards() {
-        val prefs = context.getSharedPreferences("cards", Context.MODE_PRIVATE)
-        val json = prefs.getString("cards", "[]") ?: "[]"
-        val cards = Json.decodeFromString<List<StoredCard>>(json)
-        _uiState.value = _uiState.value.copy(cards = cards)
-    }
-
-    private fun loadBudgets() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            getBudgetsUseCase()
-                .onSuccess { budgets ->
-                    _uiState.value = _uiState.value.copy(budgets = budgets, isLoading = false)
+            getCardsUseCase()
+                .onSuccess { cards ->
+                    _uiState.value = _uiState.value.copy(cards = cards, isLoading = false)
                 }
-                .onFailure {
-                    _uiState.value = _uiState.value.copy(isLoading = false)
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
                 }
         }
     }
 
+    private fun loadBudgets() {
+        viewModelScope.launch {
+            getBudgetsUseCase()
+                .onSuccess { budgets ->
+                    _uiState.value = _uiState.value.copy(budgets = budgets)
+                }
+                .onFailure { /* silencioso: presupuestos opcionales */ }
+        }
+    }
+
     fun addCard(card: StoredCard) {
-        val updated = _uiState.value.cards + card
-        _uiState.value = _uiState.value.copy(cards = updated)
-        persistCards(updated)
+        viewModelScope.launch {
+            createCardUseCase(card)
+                .onSuccess { created ->
+                    _uiState.value = _uiState.value.copy(
+                        cards = _uiState.value.cards + created,
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(error = e.message)
+                }
+        }
     }
 
     fun removeCard(cardId: String) {
-        val updated = _uiState.value.cards.filter { it.id != cardId }
-        _uiState.value = _uiState.value.copy(cards = updated)
-        persistCards(updated)
+        viewModelScope.launch {
+            deleteCardUseCase(cardId)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(
+                        cards = _uiState.value.cards.filter { it.id != cardId },
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(error = e.message)
+                }
+        }
     }
 
-    private fun persistCards(cards: List<StoredCard>) {
-        val prefs = context.getSharedPreferences("cards", Context.MODE_PRIVATE)
-        prefs.edit().putString("cards", Json.encodeToString(cards)).apply()
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun reload() {
+        loadCards()
+        loadBudgets()
     }
 }

@@ -28,3 +28,12 @@ class GetSummaryUseCase(private val repository: TransactionRepository) {
 class DeleteTransactionUseCase(private val repository: TransactionRepository) {
     suspend operator fun invoke(id: Int) = repository.delete(id)
 }
+
+class ExportTransactionsUseCase(private val repository: TransactionRepository) {
+    suspend operator fun invoke(
+        format: String = "csv",
+        startDate: String? = null,
+        endDate: String? = null,
+        type: String? = null,
+    ) = repository.export(format, startDate, endDate, type)
+}

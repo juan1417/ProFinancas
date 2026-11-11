@@ -107,6 +107,40 @@ data class BudgetCreateRequest(
     @SerializedName("end_date") val endDate: String,
 )
 
+data class CardDto(
+    val id: Int,
+    val user: String,
+    val brand: String,
+    val bank: String = "",
+    val last4: String,
+    val expiry: String,
+    @SerializedName("holder_name") val holderName: String = "",
+    @SerializedName("color_hex") val colorHex: String = "#1A4570",
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("updated_at") val updatedAt: String? = null,
+)
+
+data class CardCreateRequest(
+    val brand: String,
+    val bank: String = "",
+    val last4: String,
+    val expiry: String,
+    @SerializedName("holder_name") val holderName: String = "",
+    @SerializedName("color_hex") val colorHex: String = "#1A4570",
+)
+
+data class BudgetAlertDto(
+    @SerializedName("budget_id") val budgetId: Int,
+    @SerializedName("category_name") val categoryName: String? = null,
+    val period: String,
+    val amount: Double,
+    val spent: Double,
+    val remaining: Double,
+    val percentage: Double,
+    val status: String,
+)
+
 data class InvoiceDto(
     val id: String,
     @SerializedName("invoice_number") val invoiceNumber: String,

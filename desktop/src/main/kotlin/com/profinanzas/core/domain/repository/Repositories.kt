@@ -44,6 +44,13 @@ interface TransactionRepository {
 
     suspend fun delete(id: Int): Result<Unit>
     suspend fun getSummary(period: String = "month"): Result<Summary>
+
+    suspend fun export(
+        format: String = "csv",
+        startDate: String? = null,
+        endDate: String? = null,
+        type: String? = null,
+    ): Result<ByteArray>
 }
 
 interface BudgetRepository {
@@ -65,6 +72,10 @@ interface BudgetRepository {
         endDate: String,
     ): Result<Budget>
     suspend fun delete(id: Int): Result<Unit>
+}
+
+interface BudgetAlertRepository {
+    suspend fun list(): Result<List<com.profinanzas.core.data.model.BudgetAlertDto>>
 }
 
 interface InvoiceRepository {

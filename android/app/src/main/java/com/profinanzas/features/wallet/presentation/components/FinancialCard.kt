@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.profinanzas.features.wallet.presentation.viewmodel.StoredCard
+import com.profinanzas.core.domain.model.StoredCard
 
 @Composable
 fun FinancialCard(

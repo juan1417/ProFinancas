@@ -43,6 +43,13 @@ interface TransactionRepository {
 
     suspend fun delete(id: Int): Result<Unit>
     suspend fun getSummary(period: String = "month"): Result<Summary>
+
+    suspend fun export(
+        format: String = "json",
+        startDate: String? = null,
+        endDate: String? = null,
+        type: String? = null,
+    ): Result<ByteArray>
 }
 
 interface BudgetRepository {
