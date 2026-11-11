@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/', include('budgets.urls')),
     path('api/', include('facturas.urls')),
     path('api/', include('ingestion.urls')),
+    path('api/', include('cards.urls')),
     path('api/app/version/', app_version, name='app-version'),
     path('api/app/config/', app_config, name='app-config'),
 ]

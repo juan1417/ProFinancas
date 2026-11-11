@@ -115,6 +115,61 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return Response(data)
 
     @action(detail=False, methods=['get'])
+    def export(self, request):
+        """GET /api/transactions/export/?format=csv|json&start_date&end_date&type
+
+        Hoja de cálculo (issue #14): exporta los movimientos del usuario como
+        tabla (CSV descargable o JSON), con rango de fechas inclusivo opcional.
+        """
+        import csv
+        import io
+        from django.http import HttpResponse
+        from .application.dates import aware_bound
+
+        qs = self.get_queryset()
+        start = request.query_params.get('start_date')
+        end = request.query_params.get('end_date')
+        tx_type = request.query_params.get('type')
+        try:
+            if start:
+                qs = qs.filter(transaction_date__gte=aware_bound(start, end_of_day=False))
+            if end:
+                qs = qs.filter(transaction_date__lte=aware_bound(end, end_of_day=True))
+        except DomainError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        if tx_type in ('INCOME', 'EXPENSE'):
+            qs = qs.filter(type=tx_type)
+
+        fmt = request.query_params.get('export', 'csv').lower()
+        columns = [
+            'transaction_date', 'type', 'amount', 'description',
+            'category_name', 'notes',
+        ]
+
+        if fmt == 'json':
+            rows = list(qs.values(
+                'transaction_date', 'type', 'amount', 'description', 'notes', 'category__name',
+            ))
+            for r in rows:
+                r['category_name'] = r.pop('category__name')
+                r['amount'] = str(r['amount'])
+            return Response(rows)
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(columns)
+        for r in qs.values(
+            'transaction_date', 'type', 'amount', 'description', 'notes', 'category__name',
+        ).order_by('transaction_date'):
+            writer.writerow([
+                r['transaction_date'].isoformat(), r['type'], str(r['amount']),
+                r['description'], r['category__name'], r['notes'] or '',
+            ])
+        response = HttpResponse(buffer.getvalue(), content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="transacciones.csv"'
+        return response
+
+    @action(detail=False, methods=['get'])
     def by_category(self, request):
         """GET /transactions/by_category/"""
         try:
